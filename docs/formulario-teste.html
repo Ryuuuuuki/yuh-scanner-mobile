@@ -1,0 +1,25 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Portal de Serviços — Requerimento</title>
+<style>body{font-family:Arial;background:#f2f2f2;margin:0}.c{max-width:760px;margin:18px auto;background:#fff;padding:20px}fieldset{margin:0 0 14px}.lin{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}label{display:flex;flex-direction:column;font-size:13px}.s2{grid-column:span 2}.s3{grid-column:span 3}.s6{grid-column:span 6}</style></head><body>
+<form class="c" id="form" onsubmit="window.enviado=true;return false">
+<h2>Requerimento de certidão</h2><p style="color:#666;font-size:13px">Formulário de TESTE da Yuh Extension (site fictício, nada é enviado).</p>
+<fieldset><legend>Dados pessoais</legend><div class="lin">
+<label class="s6">Nome completo *<input name="txtNomeRequerente"></label>
+<label class="s2">CPF *<input name="cpf" placeholder="000.000.000-00"></label>
+<label class="s2">Data de nascimento *<input name="dtNasc" placeholder="dd/mm/aaaa"></label>
+<label class="s2">Sexo<select name="sexo"><option value="">Selecione</option><option>Feminino</option><option>Masculino</option></select></label>
+<label class="s3">Nome da mãe *<input name="nomeMae"></label>
+<label class="s3">Nome do pai<input name="nomePai"></label>
+<label class="s3">Naturalidade (cidade)<input name="naturalidade"></label>
+<label>UF<select name="ufNat"><option value="">--</option><option>BA</option><option>SP</option><option>RJ</option></select></label>
+<label class="s2">Nacionalidade<input name="nacionalidade"></label>
+</div></fieldset>
+<fieldset><legend>Documento de identificação</legend><div class="lin">
+<label class="s2">Tipo<select name="tipoDoc"><option value="">Selecione</option><option>RG</option><option>CNH</option><option>Passaporte</option></select></label>
+<label class="s2">Número<input name="numDoc"></label>
+<label>Órgão<input name="orgao"></label>
+<label>UF<select name="ufDoc"><option value="">--</option><option>BA</option><option>SP</option><option>RJ</option></select></label>
+<label class="s2">Data de expedição<input name="dtExp" placeholder="dd/mm/aaaa"></label>
+</div></fieldset>
+<fieldset><legend>Contato</legend><div class="lin"><label class="s3">E-mail<input name="email"></label><label class="s3">Telefone<input name="fone"></label></div></fieldset>
+<button type="submit">Enviar requerimento</button>
+</form></body></html>
