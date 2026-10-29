@@ -16,6 +16,7 @@ Funciona em **Android e iPhone**, direto pelo navegador, e pode ser instalado na
 - Várias páginas, **organizar** arrastando, girar, refazer foto, excluir
 - Importar fotos da **galeria**
 - **PDF** ou **JPG**, com nome; enviar pelo compartilhar do celular ou salvar
+- **Vários arquivos**: corte o documento com a ✂ e dê um nome para cada arquivo; **Sugerir nome** lê a página (no próprio celular) e oferece nomes prontos
 - Documentos **guardados no próprio celular**; funciona **sem internet** depois da primeira abertura
 - Tema claro/escuro
 
@@ -31,6 +32,8 @@ js/bordas.js            acha a folha na foto (cantos)
 js/imagem.js            endireitar, filtros, girar
 js/banco.js             guarda os documentos no celular (IndexedDB)
 js/pdf.js               monta o PDF
+js/ocr.js               lê o texto da página para sugerir nomes
+ocr/                    leitor de texto Tesseract (baixado só no 1º "Sugerir nome")
 sw.js                   funciona sem internet e atualiza sozinho
 manifest.webmanifest    instalar na tela inicial
 docs/                   protótipo aprovado
@@ -44,3 +47,7 @@ docs/                   protótipo aprovado
 ## Fonte
 
 Atkinson Hyperlegible (Braille Institute), licença SIL Open Font License — `fontes/OFL.txt`.
+
+## Leitor de texto
+
+Tesseract.js 5.1.1 com o idioma português (licença Apache 2.0 — `ocr/LICENSE.txt`).

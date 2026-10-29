@@ -3,8 +3,9 @@ import { endireitar, aplicarFiltro, girar, reduzir, miniatura, paraJpeg, carrega
 import { acharFolha, cantosPadrao, movimento } from "./bordas.js";
 import * as banco from "./banco.js";
 import { montarPdf } from "./pdf.js";
+import { sugestoesDeNome } from "./ocr.js";
 
-export const VERSAO = "1.0.1";
+export const VERSAO = "1.1.0";
 const $ = id => document.getElementById(id);
 const celular = $("celular");
 const FILTROS = [["realcado", "Realçado"], ["original", "Original"], ["cinza", "Cinza"], ["pb", "P&B"]];
@@ -546,6 +547,15 @@ $("bSalvar").onclick = () => {
   folhaBaixo({
     titulo: "Salvar ou enviar",
     corpo: (F, fechar) => {
+      const n0 = docAtual.paginas.length;
+      if (n0 > 1){
+        F.insertAdjacentHTML("beforeend", `
+        <div class="escolha" role="group" aria-label="Como salvar">
+          <button id="eUm" aria-pressed="true">${ICO_UM}Um arquivo<small>As ${n0} páginas juntas</small></button>
+          <button id="eVarios" aria-pressed="false">${ICO_VARIOS}Vários arquivos<small>Separar, cada um com seu nome</small></button>
+        </div>`);
+        F.querySelector("#eVarios").onclick = () => { fechar(); setTimeout(() => abrirSeparado(docAtual), 200); };
+      }
       F.insertAdjacentHTML("beforeend", `
         <label class="campo">Nome do arquivo<span class="linha"><input id="sNome" enterkeyhint="done" autocomplete="off"><span class="ext" id="sExt">.pdf</span></span></label>
         <div class="seg" role="group" aria-label="Formato"><button id="sPdf" aria-pressed="true">PDF</button><button id="sJpg" aria-pressed="false">JPG</button></div>
@@ -581,8 +591,176 @@ $("bSalvar").onclick = () => {
     },
   });
 };
+/* ================= vários arquivos (salvar separado) ================= */
+const ICO_UM = '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>';
+const ICO_VARIOS = '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="2" y="5" width="9" height="13" rx="1.5"/><rect x="13" y="5" width="9" height="13" rx="1.5"/><path d="M4.5 9h4M15.5 9h4M4.5 12h4M15.5 12h4"/></svg>';
+const ICO_TESOURA = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.1 15.9M14.5 14.5L20 20M8.1 8.1L12 12"/></svg>';
+const ICO_LUPA = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>';
+let sep = null; // { doc, arquivos:[{ pags, nome, sug }], formato, base }
+
+function abrirSeparado(d){
+  sep = { doc: d, arquivos: [{ pags: d.paginas.slice(), nome: "" }], formato: "pdf", base: "" };
+  ir("tSep");
+  $("vPdf").setAttribute("aria-pressed", "true"); $("vJpg").setAttribute("aria-pressed", "false");
+  desenharSep();
+  setTimeout(() => avisar("Começa tudo junto: toque na ✂ onde um documento termina"), 300);
+}
+const autoNomeSep = i => { const b = limparNome(sep.base) || sep.doc.nome; return sep.arquivos.length === 1 ? b : `${b} ${String(i + 1).padStart(2, "0")}`; };
+const nomeFinalSep = (a, i) => limparNome(a.nome) || autoNomeSep(i);
+const extSep = a => sep.formato === "pdf" ? ".pdf" : a.pags.length > 1 ? "pasta" : ".jpg";
+function repetidosSep(){
+  const c = {}; sep.arquivos.forEach((a, i) => { const k = nomeFinalSep(a, i).toLowerCase() + extSep(a); c[k] = (c[k] || 0) + 1; });
+  return sep.arquivos.map((a, i) => c[nomeFinalSep(a, i).toLowerCase() + extSep(a)] > 1);
+}
+function avisoNome(c, a, rep){
+  const av = c.querySelector(".aviso-nome");
+  c.classList.toggle("repetido", rep);
+  av.className = "aviso-nome" + (rep ? " erro" : "");
+  av.textContent = rep ? "Nome repetido — vai sair como “(2)”" : !a.nome.trim() ? "Sem nome: vai com o nome em cinza" : limparNome(a.nome) !== a.nome.trim() ? "Vai sair como: " + limparNome(a.nome) : "";
+}
+function atualizarNomesSep(){
+  const rep = repetidosSep();
+  document.querySelectorAll("#sepLista .cartao").forEach((c, i) => { avisoNome(c, sep.arquivos[i], rep[i]); c.querySelector("input").placeholder = autoNomeSep(i); });
+  resumoSep();
+}
+function desenharSep(rolarPara){
+  const L = $("sepLista"); L.innerHTML = ""; const rep = repetidosSep();
+  sep.arquivos.forEach((a, i) => {
+    if (i > 0){
+      const j = document.createElement("div"); j.className = "juntar";
+      j.innerHTML = `<button>⤒ juntar com o de cima</button>`; j.querySelector("button").onclick = () => juntarSep(i); L.append(j);
+    }
+    const c = document.createElement("div"); c.className = "cartao";
+    c.innerHTML = `<div class="cab"><span class="num">${i + 1}</span><span class="linha-nome"><input enterkeyhint="${i < sep.arquivos.length - 1 ? "next" : "done"}" autocomplete="off" autocapitalize="words" aria-label="Nome do arquivo ${i + 1}"><span class="ext"></span></span></div>
+      <div class="aviso-nome"></div><div class="tira"></div><div class="sug"></div>`;
+    const inp = c.querySelector("input"); inp.value = a.nome; inp.placeholder = autoNomeSep(i);
+    c.querySelector(".ext").textContent = extSep(a);
+    avisoNome(c, a, rep[i]);
+    inp.addEventListener("focus", () => document.querySelectorAll("#sepLista .cartao").forEach((x, k) => x.classList.toggle("foco", k === i)));
+    inp.addEventListener("input", () => { a.nome = inp.value; atualizarNomesSep(); });
+    inp.addEventListener("keydown", e => {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      const prox = document.querySelectorAll("#sepLista .cartao input")[i + 1];
+      if (prox){ prox.focus(); prox.closest(".cartao").scrollIntoView({ block: "center", behavior: "smooth" }); } else inp.blur();
+    });
+    const T = c.querySelector(".tira");
+    a.pags.forEach((p, k) => {
+      if (k > 0){
+        const x = document.createElement("button"); x.className = "corte"; x.setAttribute("aria-label", `Separar antes da página ${sep.doc.paginas.indexOf(p) + 1}`);
+        x.innerHTML = `<i>${ICO_TESOURA}</i>`; x.onclick = () => separarSep(i, k); T.append(x);
+      }
+      const b = document.createElement("button"); b.className = "pg"; b.setAttribute("aria-label", `Ver a página ${sep.doc.paginas.indexOf(p) + 1}`);
+      b.innerHTML = `<img alt=""><span>${sep.doc.paginas.indexOf(p) + 1}</span>`; b.querySelector("img").src = p.mini;
+      b.onclick = () => verPagina(p, i);
+      T.append(b);
+    });
+    desenharSugestoes(c, a, inp);
+    L.append(c);
+  });
+  resumoSep();
+  if (rolarPara !== undefined) L.querySelectorAll(".cartao")[rolarPara]?.scrollIntoView({ block: "center", behavior: "smooth" });
+}
+function desenharSugestoes(c, a, inp){
+  const S = c.querySelector(".sug"); S.innerHTML = "";
+  if (a.sug === "lendo"){ S.innerHTML = `<span class="lendo">Lendo a página ${sep.doc.paginas.indexOf(a.pags[0]) + 1}…</span>`; return; }
+  if (Array.isArray(a.sug)){
+    if (!a.sug.length){ S.innerHTML = `<span class="lendo">Não achei texto nesta página</span>`; return; }
+    for (const t of a.sug){
+      const b = document.createElement("button"); b.textContent = t; b.title = "Usar no nome";
+      // toque junta ao que já está escrito: "Procuração" + "Maria" = "Procuração - Maria"
+      b.onclick = () => { const atual = a.nome.trim().replace(/\s*-\s*$/, ""); a.nome = atual ? `${atual} - ${t}` : t; inp.value = a.nome; atualizarNomesSep(); };
+      S.append(b);
+    }
+    return;
+  }
+  const ler = document.createElement("button"); ler.className = "ler"; ler.innerHTML = ICO_LUPA + "Sugerir nome";
+  ler.onclick = async () => {
+    a.sug = "lendo"; desenharSugestoes(c, a, inp);
+    const pag = a.pags[0];
+    try {
+      await carregarPagina(pag);
+      const r = await banco.lerPronta(pag.pid);
+      a.sug = await sugestoesDeNome(await carregarImagem(r.blob));
+    } catch (e) {
+      console.error(e); a.sug = null; avisar("Não consegui ler a página: " + (e.message || e));
+    }
+    if (sep && sep.arquivos.includes(a)) desenharSugestoes(c, a, inp);
+  };
+  S.append(ler);
+}
+function separarSep(i, k){
+  const a = sep.arquivos[i], novo = { pags: a.pags.splice(k), nome: "" };
+  sep.arquivos.splice(i + 1, 0, novo);
+  navigator.vibrate?.(15); desenharSep(i + 1);
+}
+function juntarSep(i){
+  const de = sep.arquivos[i], para = sep.arquivos[i - 1];
+  para.pags.push(...de.pags);
+  if (!para.nome.trim()) para.nome = de.nome;
+  sep.arquivos.splice(i, 1); desenharSep(i - 1);
+}
+function resumoSep(){
+  const n = sep.arquivos.length, sem = sep.arquivos.filter(a => !a.nome.trim()).length, rep = repetidosSep().filter(Boolean).length;
+  $("sepSub").textContent = `${plural(sep.doc.paginas.length, "página", "páginas")} → ${plural(n, "arquivo", "arquivos")}`;
+  const R = $("resumo"); R.innerHTML = "";
+  const s = (t, cl) => { const e = document.createElement("span"); if (cl) e.className = cl; e.textContent = t; R.append(e); };
+  s(`${n - sem} de ${n} com nome`); if (sem) s(`${sem} com nome automático`, "meio"); if (rep) s(`${rep} com nome repetido`, "alerta");
+  $("txtEnviar").textContent = n > 1 ? `Enviar ${n} arquivos` : "Enviar";
+}
+async function verPagina(p, i){
+  await carregarPagina(p).catch(() => {});
+  $("zImg").src = p.url || p.mini; $("zTit").textContent = `Página ${sep.doc.paginas.indexOf(p) + 1} · arquivo ${i + 1}`;
+  $("zoom").hidden = false;
+}
+$("zFechar").onclick = () => { $("zoom").hidden = true; };
+$("sepVoltar").onclick = () => { const d = sep.doc; sep = null; abrirDoc(d, pagVista); };
+$("vPdf").onclick = () => { sep.formato = "pdf"; $("vPdf").setAttribute("aria-pressed", "true"); $("vJpg").setAttribute("aria-pressed", "false"); desenharSep(); };
+$("vJpg").onclick = () => { sep.formato = "jpg"; $("vJpg").setAttribute("aria-pressed", "true"); $("vPdf").setAttribute("aria-pressed", "false"); desenharSep(); };
+$("sepMais").onclick = () => folhaBaixo({ titulo: "Vários arquivos", opcoes: [
+  { t: "Uma página por arquivo", f: () => { sep.arquivos = sep.doc.paginas.map(p => ({ pags: [p], nome: "" })); desenharSep(0); } },
+  { t: "Juntar tudo de novo", f: () => { sep.arquivos = [{ pags: sep.doc.paginas.slice(), nome: "" }]; desenharSep(0); } },
+  { t: "Mudar o nome base dos automáticos", f: () => folhaBaixo({ titulo: "Nome base", corpo: (F, fechar) => {
+      F.insertAdjacentHTML("beforeend", `<p>Arquivos sem nome viram “Base 01”, “Base 02”…</p><label class="campo"><span class="linha"><input id="iBase" enterkeyhint="done" autocomplete="off"></span></label><button class="btn principal" id="okBase">Usar</button>`);
+      const ib = F.querySelector("#iBase"); ib.value = sep.base; ib.placeholder = sep.doc.nome;
+      const ok = () => { sep.base = ib.value; fechar(); desenharSep(); };
+      F.querySelector("#okBase").onclick = ok; ib.onkeydown = e => { if (e.key === "Enter") ok(); };
+      setTimeout(() => ib.focus(), 250);
+    } }) },
+] });
+// gera os arquivos (nomes repetidos ganham " (2)", " (3)"…)
+async function gerarSeparado(){
+  const usados = new Map(), saida = [];
+  for (const [i, a] of sep.arquivos.entries()){
+    let nome = nomeFinalSep(a, i);
+    const k = (nome + extSep(a)).toLowerCase(), n = (usados.get(k) || 0) + 1; usados.set(k, n);
+    if (n > 1) nome += ` (${n})`;
+    const pags = [];
+    for (const p of a.pags){ await carregarPagina(p); const r = await banco.lerPronta(p.pid); pags.push({ blob: r.blob, w: p.w, h: p.h }); }
+    if (sep.formato === "pdf") saida.push(await montarPdf(nome, pags));
+    else pags.forEach((p, j) => saida.push(new File([p.blob], pags.length > 1 ? `${nome}_p${String(j + 1).padStart(2, "0")}.jpg` : `${nome}.jpg`, { type: "image/jpeg" })));
+  }
+  return saida;
+}
+$("bEnviarV").onclick = async () => {
+  const arqs = await comEspera("Preparando os arquivos…", gerarSeparado); if (!arqs) return;
+  if (navigator.canShare?.({ files: arqs })){
+    try { await navigator.share({ files: arqs }); }
+    catch (e) { if (e.name !== "AbortError") avisar("Não consegui abrir o enviar: " + e.message); }
+  } else { baixar(arqs); avisar("Este navegador não envia arquivos direto: salvei no celular"); }
+};
+$("bBaixarV").onclick = async () => {
+  const arqs = await comEspera("Preparando os arquivos…", gerarSeparado); if (!arqs) return;
+  baixar(arqs);
+  avisar(`${plural(arqs.length, "arquivo salvo", "arquivos salvos")} em Downloads`);
+};
+
 function baixar(arqs){
-  for (const f of arqs){ const a = document.createElement("a"); a.href = URL.createObjectURL(f); a.download = f.name; document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 10000); }
+  // um de cada vez, com um respiro: alguns navegadores barram vários downloads juntos
+  arqs.forEach((f, i) => setTimeout(() => {
+    const a = document.createElement("a"); a.href = URL.createObjectURL(f); a.download = f.name; document.body.append(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 15000);
+  }, i * 400));
 }
 async function paginasProntas(d){
   const out = [];
@@ -680,6 +858,8 @@ window.addEventListener("popstate", () => {
   empilhado = false;
   const veu = celular.querySelector(".veu");
   if (veu) veu.click();
+  else if (!$("zoom").hidden) $("zoom").hidden = true;
+  else if (!$("tSep").hidden) $("sepVoltar").click();
   else if (!$("tCamera").hidden) $("camFechar").click();
   else if (!$("tBordas").hidden) $("bordVoltar").click();
   else if (!$("tGrade").hidden) $("gradeVoltar").click();

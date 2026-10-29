@@ -105,6 +105,33 @@
     <div class="dica-g">Segure e arraste para mudar a ordem · toque para abrir</div>
   </section>
 
+  <!-- ===== vários arquivos ===== -->
+  <section class="tela" id="tSep" hidden>
+    <header class="barra">
+      <button class="ic" id="sepVoltar" aria-label="Voltar"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <div class="titulo" style="padding:6px"><b>Vários arquivos</b><small id="sepSub"></small></div>
+      <button class="ic" id="sepMais" aria-label="Mais opções"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
+    </header>
+    <div class="sep-topo">
+      <div class="seg" role="group" aria-label="Formato"><button id="vPdf" aria-pressed="true">PDF</button><button id="vJpg" aria-pressed="false">JPG</button></div>
+      <p class="dica-sep">Toque na <b>✂</b> entre duas páginas para separar. Cada cartão vira um arquivo.</p>
+    </div>
+    <div class="sep-lista" id="sepLista"></div>
+    <div class="sep-base">
+      <div class="resumo" id="resumo"></div>
+      <div class="linha-btn">
+        <button class="btn" id="bBaixarV"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>Salvar</button>
+        <button class="btn principal" id="bEnviarV"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg><span id="txtEnviar">Enviar</span></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== página grande ===== -->
+  <div class="zoom" id="zoom" hidden>
+    <header class="barra escura"><button class="ic" id="zFechar" aria-label="Fechar" style="color:#fff"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button><h1 id="zTit" style="font-size:16px;color:#fff"></h1></header>
+    <div class="z-img"><img id="zImg" alt=""></div>
+  </div>
+
   <div class="aviso" id="aviso" role="status"></div>
 </div>
 <script type="module" src="js/app.js"></script>
