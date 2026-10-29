@@ -1,0 +1,927 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#1F4FD1">
+<title>Yuh Scanner Mobile · protótipo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --mesa:#DCE2E9; --painel:#F7F9FB; --papel:#FFFFFF; --tinta:#1E2A3A; --tinta-2:#5B6878; --linha:#C7D0DA;
+  --caneta:#1F4FD1; --caneta-suave:#E3EAFB; --sobre-caneta:#FFFFFF; --livre:#1E8A4C; --ocupado:#B7791F; --carimbo:#B42318;
+  --sombra:0 1px 2px rgba(30,42,58,.18),0 8px 24px rgba(30,42,58,.14);
+  --raio:10px; --fonte:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --mesa:#1B222C; --painel:#242D39; --papel:#F2F2EE; --tinta:#E6EBF1; --tinta-2:#9AA7B6; --linha:#384455;
+    --caneta:#7FA2FF; --caneta-suave:#2C3A57; --sobre-caneta:#0E1A33; --livre:#4CC283; --ocupado:#E3A948; --carimbo:#FF7A6E;
+    --sombra:0 2px 4px rgba(0,0,0,.4),0 12px 32px rgba(0,0,0,.45);
+  }
+}
+:root[data-theme="dark"]{
+  --mesa:#1B222C; --painel:#242D39; --papel:#F2F2EE; --tinta:#E6EBF1; --tinta-2:#9AA7B6; --linha:#384455;
+  --caneta:#7FA2FF; --caneta-suave:#2C3A57; --sobre-caneta:#0E1A33; --livre:#4CC283; --ocupado:#E3A948; --carimbo:#FF7A6E;
+  --sombra:0 2px 4px rgba(0,0,0,.4),0 12px 32px rgba(0,0,0,.45);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{font-family:var(--fonte);font-size:16px;line-height:1.4;color:var(--tinta);background:#0d1117;overflow:hidden;overscroll-behavior:none}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--caneta);outline-offset:2px}
+
+/* o "celular": tela cheia no celular, moldura no computador */
+.celular{position:relative;width:100%;height:100dvh;margin:0 auto;background:var(--mesa);overflow:hidden;display:flex;flex-direction:column}
+@media (min-width:600px){
+  body{display:grid;place-items:center;background:radial-gradient(circle at 30% 20%,#2a3445,#0d1117)}
+  .celular{width:390px;height:min(844px,calc(100dvh - 40px));border-radius:42px;border:10px solid #000;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+}
+.tela{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--mesa)}
+
+/* barra de cima */
+.barra{display:flex;align-items:center;gap:6px;padding:calc(10px + env(safe-area-inset-top)) 10px 10px;background:var(--painel);border-bottom:1px solid var(--linha);min-height:58px}
+.barra h1{font-size:18px;margin:0 0 0 4px;flex:1;display:flex;align-items:center;gap:8px;min-width:0}
+.barra h1 svg{color:var(--caneta);flex:none}
+.barra .titulo{flex:1;min-width:0;text-align:left;border:0;background:none;padding:6px;border-radius:8px;display:flex;flex-direction:column}
+.barra .titulo b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:16px}
+.barra .titulo small{color:var(--tinta-2);font-size:12px}
+.ic{width:44px;height:44px;display:grid;place-items:center;border:0;background:none;border-radius:12px;flex:none}
+.ic:active{background:var(--caneta-suave)}
+
+/* ---------- início ---------- */
+.lista{flex:1;overflow-y:auto;padding:14px 14px 120px;display:flex;flex-direction:column;gap:10px}
+.lista h2{font-size:13px;font-weight:400;color:var(--tinta-2);margin:4px 2px}
+.doc{display:flex;gap:12px;align-items:center;background:var(--painel);border:1px solid var(--linha);border-radius:14px;padding:10px;text-align:left;width:100%}
+.doc:active{background:var(--caneta-suave)}
+.doc img{width:52px;height:70px;object-fit:cover;object-position:top;border-radius:4px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);flex:none}
+.doc .inf{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.doc b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.doc small{color:var(--tinta-2);font-size:13px}
+.vazio{flex:1;display:grid;place-items:center;text-align:center;color:var(--tinta-2);padding:30px}
+.vazio .folha{width:120px;aspect-ratio:210/297;border:2px dashed var(--linha);border-radius:6px;margin:0 auto 18px;display:grid;place-items:center}
+.vazio strong{color:var(--tinta);font-size:18px;display:block;margin-bottom:6px}
+.fab{position:absolute;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;align-items:center;gap:10px;height:60px;padding:0 28px;border:0;border-radius:999px;background:var(--caneta);color:var(--sobre-caneta);font-weight:700;font-size:18px;box-shadow:0 8px 24px rgba(31,79,209,.45)}
+.fab:active{transform:translateX(-50%) scale(.97)}
+.link{border:0;background:none;color:var(--caneta);padding:8px;border-radius:8px;font-size:15px}
+
+/* ---------- câmera ---------- */
+.camera{background:#000;color:#fff}
+.visor{position:relative;flex:1;overflow:hidden;display:grid;place-items:center}
+.visor video,.visor canvas.cena{width:100%;height:100%;object-fit:cover;display:block}
+.visor svg.contorno{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.contorno polygon{fill:rgba(127,162,255,.18);stroke:#7FA2FF;stroke-width:3;stroke-linejoin:round;animation:pulsa 1.4s ease-in-out infinite}
+@keyframes pulsa{50%{fill:rgba(127,162,255,.32)}}
+@media (prefers-reduced-motion:reduce){.contorno polygon{animation:none}}
+.cam-topo{position:absolute;left:0;right:0;top:0;padding:calc(10px + env(safe-area-inset-top)) 10px 10px;display:flex;align-items:center;gap:6px;background:linear-gradient(rgba(0,0,0,.55),transparent);z-index:2}
+.cam-topo .ic{color:#fff}
+.cam-topo .ic:active{background:rgba(255,255,255,.15)}
+.pilula{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:999px;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.35);color:#fff;font-size:14px}
+.pilula[aria-pressed="true"]{background:#fff;color:#000;border-color:#fff;font-weight:700}
+.cam-dica{position:absolute;left:50%;top:calc(70px + env(safe-area-inset-top));transform:translateX(-50%);background:rgba(0,0,0,.6);padding:6px 14px;border-radius:999px;font-size:14px;white-space:nowrap;z-index:2}
+.cam-base{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:16px 22px calc(20px + env(safe-area-inset-bottom));background:#000}
+.disparo{width:76px;height:76px;border-radius:50%;border:4px solid #fff;background:transparent;display:grid;place-items:center;padding:0}
+.disparo i{width:60px;height:60px;border-radius:50%;background:#fff;transition:transform .1s}
+.disparo:active i{transform:scale(.88)}
+.pilha{justify-self:start;position:relative;width:52px;height:68px;border:0;background:none;padding:0}
+.pilha img{width:100%;height:100%;object-fit:cover;border-radius:6px;border:2px solid #fff;background:#333}
+.pilha span{position:absolute;top:-8px;right:-8px;min-width:24px;height:24px;border-radius:999px;background:var(--caneta);color:var(--sobre-caneta);font-size:13px;font-weight:700;display:grid;place-items:center;padding:0 6px}
+.galeria{justify-self:end;display:flex;flex-direction:column;align-items:center;gap:2px;border:0;background:none;color:#fff;font-size:12px}
+.flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:3}
+.flash.on{animation:flash .25s}
+@keyframes flash{0%{opacity:.8}100%{opacity:0}}
+
+/* ---------- ajustar bordas ---------- */
+.bordas{background:#11161d;color:#fff}
+.bordas .barra{background:#11161d;border-color:#2a3442;color:#fff}
+.palco{position:relative;flex:1;display:grid;place-items:center;padding:24px;overflow:hidden;touch-action:none}
+.palco .quadro{position:relative}
+.palco canvas{display:block;max-width:100%;max-height:100%}
+.palco svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.palco svg polygon{fill:rgba(127,162,255,.15);stroke:#7FA2FF;stroke-width:2.5}
+.alca{position:absolute;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;touch-action:none;display:grid;place-items:center;cursor:grab}
+.alca i{width:22px;height:22px;border-radius:50%;background:#fff;border:3px solid #7FA2FF;box-shadow:0 2px 6px rgba(0,0,0,.5)}
+.lupa{position:absolute;width:110px;height:110px;border-radius:50%;border:3px solid #fff;box-shadow:0 4px 18px rgba(0,0,0,.6);overflow:hidden;pointer-events:none;z-index:4;background:#000}
+.lupa::after{content:"";position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border:2px solid #7FA2FF;border-radius:50%}
+.bordas-base{display:flex;gap:10px;padding:12px 14px calc(16px + env(safe-area-inset-bottom));background:#11161d}
+.btn{flex:1;height:52px;border-radius:14px;border:1px solid var(--linha);background:var(--painel);font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 12px}
+.btn.escuro{background:#222b37;border-color:#384455;color:#fff}
+.btn.principal{background:var(--caneta);border-color:var(--caneta);color:var(--sobre-caneta)}
+.btn.principal.claro{background:#7FA2FF;border-color:#7FA2FF;color:#0E1A33}
+.btn:disabled{opacity:.5}
+.dica-b{text-align:center;font-size:13px;color:#9AA7B6;padding:0 16px 8px}
+
+/* ---------- editor do documento ---------- */
+.carrossel{flex:1;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;min-height:0}
+.carrossel::-webkit-scrollbar{display:none}
+.slide{flex:0 0 100%;scroll-snap-align:center;display:grid;place-items:center;padding:18px 22px 6px;min-height:0}
+.slide img{max-width:100%;max-height:100%;box-shadow:var(--sombra);background:#fff;border-radius:2px}
+.indic{display:flex;justify-content:center;align-items:center;gap:6px;padding:4px 0 8px;color:var(--tinta-2);font-size:13px}
+.indic i{width:7px;height:7px;border-radius:50%;background:var(--linha)}
+.indic i.on{background:var(--caneta);width:18px;border-radius:999px}
+.filtros{display:flex;gap:8px;padding:2px 14px 10px;overflow-x:auto;scrollbar-width:none}
+.filtros::-webkit-scrollbar{display:none}
+.filtro{flex:none;display:flex;flex-direction:column;align-items:center;gap:4px;border:0;background:none;padding:4px;border-radius:10px;font-size:12px;color:var(--tinta-2)}
+.filtro img{width:56px;height:56px;object-fit:cover;object-position:top;border-radius:8px;border:2px solid transparent;background:#fff}
+.filtro[aria-pressed="true"]{color:var(--caneta);font-weight:700}
+.filtro[aria-pressed="true"] img{border-color:var(--caneta)}
+.ferramentas{display:flex;justify-content:space-around;padding:6px 6px;border-top:1px solid var(--linha);background:var(--painel)}
+.ferr{display:flex;flex-direction:column;align-items:center;gap:3px;border:0;background:none;font-size:11px;color:var(--tinta);padding:6px 4px;border-radius:10px;min-width:56px}
+.ferr:active{background:var(--caneta-suave)}
+.ferr.perigo{color:var(--carimbo)}
+.acao-base{padding:8px 14px calc(12px + env(safe-area-inset-bottom));background:var(--painel)}
+
+/* ---------- grade (organizar) ---------- */
+.grade{flex:1;overflow-y:auto;padding:14px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;align-content:start;touch-action:pan-y}
+.peca{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;color:var(--tinta-2);user-select:none;-webkit-user-select:none}
+.peca img{width:100%;aspect-ratio:210/297;object-fit:cover;object-position:top;border-radius:4px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.25);pointer-events:none}
+.peca.arrastando{opacity:.35}
+.peca.alvo img{outline:3px solid var(--caneta);outline-offset:2px}
+.fantasma{position:fixed;z-index:50;width:90px;pointer-events:none;transform:translate(-50%,-60%) rotate(-3deg);box-shadow:0 12px 30px rgba(0,0,0,.4);border-radius:4px}
+.dica-g{text-align:center;color:var(--tinta-2);font-size:13px;padding:0 14px 8px}
+
+/* ---------- folha de baixo (salvar / menus) ---------- */
+.veu{position:absolute;inset:0;background:rgba(10,15,25,.5);z-index:20;display:flex;align-items:flex-end;opacity:0;transition:opacity .2s}
+.veu.on{opacity:1}
+.folha-baixo{width:100%;background:var(--painel);border-radius:22px 22px 0 0;padding:10px 18px calc(18px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:14px;transform:translateY(100%);transition:transform .25s ease;max-height:90%;overflow-y:auto}
+.veu.on .folha-baixo{transform:none}
+@media (prefers-reduced-motion:reduce){.veu,.folha-baixo{transition:none}}
+.puxador{width:40px;height:5px;border-radius:999px;background:var(--linha);margin:0 auto 4px}
+.folha-baixo h3{margin:0;font-size:19px}
+.folha-baixo .btn{flex:none;width:100%}
+.folha-baixo p{margin:0;color:var(--tinta-2);font-size:14px}
+.campo{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--tinta-2)}
+.campo .linha{display:flex;align-items:center;border:1px solid var(--linha);border-radius:12px;background:var(--papel);overflow:hidden;height:50px}
+.campo input{flex:1;min-width:0;height:100%;border:0;padding:0 14px;background:transparent;color:#1E2A3A;font-size:17px}
+.campo input:focus{outline:none}
+.campo .linha:focus-within{outline:2px solid var(--caneta);outline-offset:1px}
+.campo .ext{padding:0 14px;color:#5B6878;font-size:15px;height:100%;display:grid;place-items:center;background:#EEF1F5}
+.seg{display:flex;border:1px solid var(--linha);border-radius:12px;overflow:hidden}
+.seg button{flex:1;height:44px;border:0;background:transparent}
+.seg button+button{border-left:1px solid var(--linha)}
+.seg button[aria-pressed="true"]{background:var(--caneta-suave);color:var(--caneta);font-weight:700}
+.opcoes-lista{display:flex;flex-direction:column}
+.opcoes-lista button{display:flex;align-items:center;gap:14px;height:54px;border:0;background:none;padding:0 6px;border-radius:12px;font-size:16px;text-align:left}
+.opcoes-lista button:active{background:var(--caneta-suave)}
+.opcoes-lista button.perigo{color:var(--carimbo)}
+
+/* aviso */
+.aviso{position:absolute;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translate(-50%,16px);background:var(--tinta);color:var(--painel);padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;transition:.2s;z-index:40;max-width:90%;text-align:center}
+.aviso.on{opacity:1;transform:translate(-50%,0)}
+.processando{position:absolute;inset:0;background:rgba(10,15,25,.55);z-index:30;display:grid;place-items:center;color:#fff;font-weight:700}
+.processando div{display:flex;flex-direction:column;align-items:center;gap:12px}
+.roda{width:40px;height:40px;border-radius:50%;border:4px solid rgba(255,255,255,.25);border-top-color:#fff;animation:gira .8s linear infinite}
+@keyframes gira{to{transform:rotate(360deg)}}
+
+/* nota do protótipo (só no computador) */
+.nota{position:fixed;left:20px;top:20px;max-width:300px;background:#fff;color:#1E2A3A;border-radius:12px;padding:14px 36px 14px 16px;font-size:13px;box-shadow:0 10px 30px rgba(0,0,0,.4);display:none}
+.nota b{display:block;margin-bottom:6px;font-size:14px}
+.nota button{position:absolute;top:6px;right:8px;border:0;background:none;font-size:18px;color:#5B6878}
+@media (min-width:1000px){.nota{display:block}}
+</style>
+</head>
+<body>
+
+<div class="nota" id="nota"><button onclick="this.parentNode.remove()" aria-label="Fechar">×</button>
+  <b>Protótipo — Yuh Scanner Mobile</b>
+  Feito para abrir no celular (ou aqui, num "celular" de mentira). Toque em <b>Digitalizar</b>: se a câmera não estiver liberada, ele usa uma foto de exemplo de uma folha torta em cima da mesa.
+  <br><br>Os documentos ficam só na memória neste protótipo.
+</div>
+
+<div class="celular" id="celular">
+
+  <!-- ===== início ===== -->
+  <section class="tela" id="tInicio">
+    <header class="barra">
+      <h1><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M9 7h6M9 11h6M9 15h4"/></svg>Yuh Scanner</h1>
+      <button class="ic" id="bTema" aria-label="Trocar tema claro/escuro"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+    </header>
+    <div class="lista" id="lista"></div>
+    <button class="fab" id="bDigitalizar"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3.5"/></svg>Digitalizar</button>
+  </section>
+
+  <!-- ===== câmera ===== -->
+  <section class="tela camera" id="tCamera" hidden>
+    <div class="visor" id="visor">
+      <video id="video" playsinline muted autoplay hidden></video>
+      <canvas class="cena" id="cena" hidden></canvas>
+      <svg class="contorno" id="contorno"><polygon points=""/></svg>
+      <div class="cam-topo">
+        <button class="ic" id="camFechar" aria-label="Fechar câmera"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+        <span style="flex:1"></span>
+        <button class="pilula" id="camAuto" aria-pressed="true" title="Tira a foto sozinho quando a folha fica parada">Auto</button>
+        <button class="ic" id="camFlash" aria-label="Flash" aria-pressed="false"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></button>
+      </div>
+      <div class="cam-dica" id="camDica">Procurando a folha…</div>
+      <div class="flash" id="flash"></div>
+    </div>
+    <div class="cam-base">
+      <button class="pilha" id="camPilha" aria-label="Ver páginas tiradas" hidden><img id="camPilhaImg" alt=""><span id="camPilhaN">0</span></button>
+      <span id="camPilhaVazia" style="justify-self:start"></span>
+      <button class="disparo" id="camDisparo" aria-label="Tirar foto"><i></i></button>
+      <button class="galeria" id="camGaleria"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>Galeria</button>
+      <input type="file" id="arqGaleria" accept="image/*" multiple hidden>
+      <input type="file" id="arqCamera" accept="image/*" capture="environment" hidden>
+    </div>
+  </section>
+
+  <!-- ===== ajustar bordas ===== -->
+  <section class="tela bordas" id="tBordas" hidden>
+    <header class="barra">
+      <button class="ic" id="bordVoltar" aria-label="Voltar" style="color:#fff"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <h1 style="font-size:17px" id="bordTitulo">Ajustar bordas</h1>
+      <button class="link" id="bordTudo" style="color:#7FA2FF">Folha toda</button>
+    </header>
+    <div class="palco" id="palco"><div class="quadro" id="quadro"><canvas id="bordCanvas"></canvas><svg id="bordSvg"><polygon points=""/></svg></div></div>
+    <div class="dica-b">Arraste as bolinhas até os cantos da folha</div>
+    <div class="bordas-base" id="bordBaseNova">
+      <button class="btn escuro" id="bordRefazer">Refazer</button>
+      <button class="btn escuro" id="bordMais">+ Outra página</button>
+      <button class="btn principal claro" id="bordConcluir">Concluir</button>
+    </div>
+    <div class="bordas-base" id="bordBaseEdit" hidden>
+      <button class="btn escuro" id="bordCancelar">Cancelar</button>
+      <button class="btn principal claro" id="bordAplicar">Aplicar</button>
+    </div>
+  </section>
+
+  <!-- ===== documento ===== -->
+  <section class="tela" id="tDoc" hidden>
+    <header class="barra">
+      <button class="ic" id="docVoltar" aria-label="Voltar para o início"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <button class="titulo" id="docTitulo"><b id="docNome"></b><small id="docInfo"></small></button>
+      <button class="ic" id="docGrade" aria-label="Organizar páginas"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
+      <button class="ic" id="docMenu" aria-label="Mais opções"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
+    </header>
+    <div class="carrossel" id="carrossel"></div>
+    <div class="indic" id="indic"></div>
+    <div class="filtros" id="filtros"></div>
+    <nav class="ferramentas">
+      <button class="ferr" id="fAdd"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="3" width="13" height="17" rx="2"/><path d="M19 9v10a2 2 0 0 1-2 2H8"/><path d="M10.5 8v7M7 11.5h7"/></svg>Página</button>
+      <button class="ferr" id="fBordas"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg>Bordas</button>
+      <button class="ferr" id="fGirar"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>Girar</button>
+      <button class="ferr" id="fRefazer"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3.5"/></svg>Refazer</button>
+      <button class="ferr perigo" id="fExcluir"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>Excluir</button>
+    </nav>
+    <div class="acao-base"><button class="btn principal" id="bSalvar" style="width:100%"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>Salvar ou enviar</button></div>
+  </section>
+
+  <!-- ===== organizar ===== -->
+  <section class="tela" id="tGrade" hidden>
+    <header class="barra">
+      <button class="ic" id="gradeVoltar" aria-label="Voltar"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <h1 style="font-size:17px">Organizar páginas</h1>
+      <button class="link" id="gradePronto">Pronto</button>
+    </header>
+    <div class="grade" id="grade"></div>
+    <div class="dica-g">Segure e arraste para mudar a ordem · toque para abrir</div>
+  </section>
+
+  <div class="aviso" id="aviso" role="status"></div>
+</div>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const celular = $("celular");
+
+/* ================= estado ================= */
+// documento: { id, nome, criado, paginas:[pagina] }
+// página: { foto (canvas), cantos:[{x,y}×4] (na foto), filtro, rot (0-3), pronta (canvas), mini (dataURL) }
+let docs = [], docAtual = null, novas = [], refazendo = null, editandoBordas = null, seq = 0;
+const FILTROS = [["realcado", "Realçado"], ["original", "Original"], ["cinza", "Cinza"], ["pb", "P&B"]];
+
+/* ================= navegação ================= */
+function ir(tela){
+  for (const t of document.querySelectorAll(".tela")) t.hidden = t.id !== tela;
+  if (tela !== "tCamera") pararCamera();
+}
+
+/* ================= aviso / processando ================= */
+let tAviso;
+function avisar(t){ const a = $("aviso"); a.textContent = t; a.classList.add("on"); clearTimeout(tAviso); tAviso = setTimeout(() => a.classList.remove("on"), 2600); }
+function processando(t){
+  let p = celular.querySelector(".processando");
+  if (t === false){ p?.remove(); return; }
+  if (!p){ p = document.createElement("div"); p.className = "processando"; p.innerHTML = `<div><span class="roda"></span><span></span></div>`; celular.append(p); }
+  p.querySelector("span:last-child").textContent = t;
+}
+const espera = () => new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
+
+/* ================= matemática: endireitar a folha ================= */
+// homografia que leva 4 pontos "de" em 4 pontos "para"
+function homografia(de, para){
+  const A = [], b = [];
+  for (let i = 0; i < 4; i++){
+    const { x, y } = de[i], { x: u, y: v } = para[i];
+    A.push([x, y, 1, 0, 0, 0, -u * x, -u * y]); b.push(u);
+    A.push([0, 0, 0, x, y, 1, -v * x, -v * y]); b.push(v);
+  }
+  // Gauss
+  for (let c = 0; c < 8; c++){
+    let m = c; for (let r = c + 1; r < 8; r++) if (Math.abs(A[r][c]) > Math.abs(A[m][c])) m = r;
+    [A[c], A[m]] = [A[m], A[c]]; [b[c], b[m]] = [b[m], b[c]];
+    for (let r = c + 1; r < 8; r++){ const f = A[r][c] / A[c][c]; for (let k = c; k < 8; k++) A[r][k] -= f * A[c][k]; b[r] -= f * b[c]; }
+  }
+  const h = new Array(8);
+  for (let r = 7; r >= 0; r--){ let s = b[r]; for (let k = r + 1; k < 8; k++) s -= A[r][k] * h[k]; h[r] = s / A[r][r]; }
+  return [...h, 1];
+}
+// pinta em "dst" (só dentro do quadrilátero dstQuad) a imagem "src" vista pelos cantos srcQuad
+function deformar(src, srcQuad, dst, dstQuad){
+  const H = homografia(dstQuad, srcQuad);
+  const sw = src.width, sh = src.height, sd = src.getContext("2d").getImageData(0, 0, sw, sh).data;
+  const dctx = dst.getContext("2d"), dw = dst.width, dh = dst.height;
+  const xs = dstQuad.map(p => p.x), ys = dstQuad.map(p => p.y);
+  const x0 = Math.max(0, Math.floor(Math.min(...xs))), x1 = Math.min(dw, Math.ceil(Math.max(...xs)));
+  const y0 = Math.max(0, Math.floor(Math.min(...ys))), y1 = Math.min(dh, Math.ceil(Math.max(...ys)));
+  const out = dctx.getImageData(x0, y0, x1 - x0, y1 - y0), od = out.data, ow = x1 - x0;
+  const dentro = (px, py) => { // ponto dentro do quadrilátero (convexo)
+    let s = 0;
+    for (let i = 0; i < 4; i++){
+      const a = dstQuad[i], c = dstQuad[(i + 1) % 4];
+      const cr = (c.x - a.x) * (py - a.y) - (c.y - a.y) * (px - a.x);
+      if (cr !== 0){ if (s === 0) s = Math.sign(cr); else if (Math.sign(cr) !== s) return false; }
+    }
+    return true;
+  };
+  for (let y = y0; y < y1; y++){
+    for (let x = x0; x < x1; x++){
+      if (!dentro(x + .5, y + .5)) continue;
+      const w = H[6] * x + H[7] * y + 1;
+      const u = (H[0] * x + H[1] * y + H[2]) / w, v = (H[3] * x + H[4] * y + H[5]) / w;
+      if (u < 0 || v < 0 || u > sw - 1 || v > sh - 1) continue;
+      const ux = Math.floor(u), vy = Math.floor(v), fx = u - ux, fy = v - vy;
+      const i00 = (vy * sw + ux) * 4, i10 = i00 + 4, i01 = i00 + sw * 4, i11 = i01 + 4;
+      const o = ((y - y0) * ow + (x - x0)) * 4;
+      for (let k = 0; k < 3; k++){
+        const t = sd[i00 + k] * (1 - fx) + sd[i10 + k] * fx, bt = sd[i01 + k] * (1 - fx) + sd[i11 + k] * fx;
+        od[o + k] = t * (1 - fy) + bt * fy;
+      }
+      od[o + 3] = 255;
+    }
+  }
+  dctx.putImageData(out, x0, y0);
+}
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+function endireitar(foto, c){
+  // tamanho da folha endireitada: média dos lados, com o maior lado em até 1600 px
+  let w = (dist(c[0], c[1]) + dist(c[3], c[2])) / 2, h = (dist(c[0], c[3]) + dist(c[1], c[2])) / 2;
+  const s = Math.min(1, 1600 / Math.max(w, h)) * Math.max(1, 900 / Math.max(w, h));
+  w = Math.round(w * s); h = Math.round(h * s);
+  const out = document.createElement("canvas"); out.width = w; out.height = h;
+  deformar(foto, c, out, [{ x: 0, y: 0 }, { x: w, y: 0 }, { x: w, y: h }, { x: 0, y: h }]);
+  return out;
+}
+
+/* ================= filtros (cara de digitalizado) ================= */
+function fundoEstimado(c){
+  // fundo = a página muito borrada (reduz bastante e amplia de novo)
+  const p = document.createElement("canvas"); p.width = Math.max(1, Math.round(c.width / 24)); p.height = Math.max(1, Math.round(c.height / 24));
+  const g = p.getContext("2d"); g.imageSmoothingQuality = "high"; g.drawImage(c, 0, 0, p.width, p.height);
+  // "fecha" o texto: cada ponto pega o mais claro dos vizinhos (o texto some, sobra o papel)
+  const d = g.getImageData(0, 0, p.width, p.height), o = new Uint8ClampedArray(d.data);
+  for (let y = 0; y < p.height; y++) for (let x = 0; x < p.width; x++){
+    for (let k = 0; k < 3; k++){
+      let m = 0;
+      for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++){
+        const yy = Math.min(p.height - 1, Math.max(0, y + dy)), xx = Math.min(p.width - 1, Math.max(0, x + dx));
+        m = Math.max(m, d.data[(yy * p.width + xx) * 4 + k]);
+      }
+      o[(y * p.width + x) * 4 + k] = m;
+    }
+  }
+  d.data.set(o); g.putImageData(d, 0, 0);
+  const f = document.createElement("canvas"); f.width = c.width; f.height = c.height;
+  const fg = f.getContext("2d"); fg.imageSmoothingQuality = "high"; fg.drawImage(p, 0, 0, c.width, c.height);
+  return fg.getImageData(0, 0, c.width, c.height).data;
+}
+function aplicarFiltro(src, filtro){
+  const c = document.createElement("canvas"); c.width = src.width; c.height = src.height;
+  const g = c.getContext("2d"); g.drawImage(src, 0, 0);
+  if (filtro === "original") return c;
+  const img = g.getImageData(0, 0, c.width, c.height), d = img.data;
+  if (filtro === "cinza"){
+    for (let i = 0; i < d.length; i += 4){ const l = .299 * d[i] + .587 * d[i + 1] + .114 * d[i + 2]; d[i] = d[i + 1] = d[i + 2] = l; }
+  } else {
+    const f = fundoEstimado(c);
+    for (let i = 0; i < d.length; i += 4){
+      for (let k = 0; k < 3; k++){
+        let v = d[i + k] / Math.max(1, f[i + k]) * 255;   // tira a sombra / luz desigual
+        v = (v - 40) * 255 / 190;                           // mais contraste: papel branco, tinta escura
+        d[i + k] = v;
+      }
+      if (filtro === "pb"){ const l = .299 * d[i] + .587 * d[i + 1] + .114 * d[i + 2]; d[i] = d[i + 1] = d[i + 2] = l < 170 ? 0 : 255; }
+    }
+  }
+  g.putImageData(img, 0, 0);
+  return c;
+}
+function girarCanvas(src, q){
+  q = ((q % 4) + 4) % 4; if (!q) return src;
+  const c = document.createElement("canvas");
+  [c.width, c.height] = q % 2 ? [src.height, src.width] : [src.width, src.height];
+  const g = c.getContext("2d"); g.translate(c.width / 2, c.height / 2); g.rotate(q * Math.PI / 2); g.drawImage(src, -src.width / 2, -src.height / 2);
+  return c;
+}
+function miniatura(c, larg = 220){
+  const m = document.createElement("canvas"), s = larg / c.width;
+  m.width = larg; m.height = Math.round(c.height * s);
+  const g = m.getContext("2d"); g.imageSmoothingQuality = "high"; g.drawImage(c, 0, 0, m.width, m.height);
+  return m.toDataURL("image/jpeg", .8);
+}
+async function prepararPagina(p){
+  const reta = endireitar(p.foto, p.cantos);
+  p.pronta = girarCanvas(aplicarFiltro(reta, p.filtro), p.rot);
+  p.reta = reta; p.mini = miniatura(p.pronta);
+}
+
+/* ================= foto de exemplo (sem câmera) ================= */
+const PESSOAS = ["MARIA DE SOUZA", "JOSÉ CARLOS LIMA", "ANA PAULA ROCHA", "PEDRO ALVES"];
+let exemplo = 0;
+function folhaDeExemplo(n){
+  const c = document.createElement("canvas"); c.width = 850; c.height = 1200;
+  const g = c.getContext("2d");
+  g.fillStyle = "#fbfaf6"; g.fillRect(0, 0, c.width, c.height);
+  g.fillStyle = "#1d2433"; g.font = "bold 40px Arial"; g.fillText(["PROCURAÇÃO", "RECIBO", "DECLARAÇÃO", "REQUERIMENTO"][n % 4], 70, 120);
+  g.font = "22px Arial"; g.fillStyle = "#555"; g.fillText("Tabelionato de Notas · Livro 12 · Folha " + (40 + n), 70, 160);
+  g.fillStyle = "#222"; g.font = "24px Arial"; g.fillText("Outorgante:", 70, 240); g.font = "bold 26px Arial"; g.fillText(PESSOAS[n % 4], 230, 240);
+  g.font = "22px Arial";
+  for (let y = 300, i = 0; y < 900; y += 38, i++){ g.fillStyle = "#444"; g.fillRect(70, y, 700 - (i * 53 % 160), 9); }
+  g.strokeStyle = "#1f3fb0"; g.lineWidth = 3; g.beginPath();
+  for (let x = 0; x < 260; x++) g.lineTo(470 + x, 1010 + Math.sin(x / 9) * 22 + Math.sin(x / 3) * 4); g.stroke();
+  g.fillStyle = "#333"; g.fillRect(450, 1060, 320, 2); g.font = "18px Arial"; g.fillText("Assinatura", 560, 1090);
+  return c;
+}
+function cenaDeExemplo(){
+  const W = 1080, H = 1440, c = document.createElement("canvas"); c.width = W; c.height = H;
+  const g = c.getContext("2d");
+  // mesa de madeira
+  const gr = g.createLinearGradient(0, 0, W, H); gr.addColorStop(0, "#7a5233"); gr.addColorStop(1, "#4e3320");
+  g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  for (let i = 0; i < 90; i++){ g.strokeStyle = `rgba(${30 + i % 40},${15 + i % 20},5,.18)`; g.lineWidth = 1 + i % 4; g.beginPath(); g.moveTo(0, i * 17 + Math.sin(i) * 9); g.bezierCurveTo(W / 3, i * 17 + 12, W * 2 / 3, i * 17 - 10, W, i * 17 + 5); g.stroke(); }
+  // folha torta, em perspectiva
+  const j = (exemplo % 3) * 18;
+  const quad = [{ x: 210 + j, y: 240 - j }, { x: 880 - j / 2, y: 300 + j }, { x: 960 - j, y: 1210 }, { x: 140 + j, y: 1150 - j }];
+  // sombra
+  g.save(); g.filter = "blur(18px)"; g.fillStyle = "rgba(0,0,0,.45)"; g.beginPath(); quad.forEach((p, i) => i ? g.lineTo(p.x + 16, p.y + 22) : g.moveTo(p.x + 16, p.y + 22)); g.fill(); g.restore();
+  const f = folhaDeExemplo(exemplo);
+  deformar(f, [{ x: 0, y: 0 }, { x: f.width, y: 0 }, { x: f.width, y: f.height }, { x: 0, y: f.height }], c, quad);
+  // luz desigual (canto escuro), como foto de verdade
+  const luz = g.createRadialGradient(W * .3, H * .25, 100, W * .5, H * .6, W);
+  luz.addColorStop(0, "rgba(255,250,235,.10)"); luz.addColorStop(1, "rgba(0,0,0,.38)");
+  g.fillStyle = luz; g.fillRect(0, 0, W, H);
+  exemplo++;
+  return { c, quad };
+}
+
+/* ================= câmera ================= */
+let fluxo = null, cena = null, tAuto = null, camDe = "tInicio";
+async function abrirCamera(paraDoc){
+  docAlvo = paraDoc || null;
+  camDe = !$("tDoc").hidden ? "tDoc" : "tInicio";
+  novas = []; atualizarPilha();
+  ir("tCamera");
+  $("camDica").textContent = "Procurando a folha…";
+  const video = $("video");
+  try {
+    if (!navigator.mediaDevices?.getUserMedia) throw new Error("sem câmera");
+    fluxo = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1440 } }, audio: false });
+    video.srcObject = fluxo; video.hidden = false; $("cena").hidden = true;
+    await video.play().catch(() => {});
+    cena = null;
+    desenharContorno(null);
+    $("camDica").textContent = "Enquadre a folha e toque no botão";
+  } catch (e) {
+    // sem câmera (computador / permissão negada): usa a foto de exemplo
+    video.hidden = true; mostrarCenaExemplo();
+  }
+}
+function mostrarCenaExemplo(){
+  cena = cenaDeExemplo();
+  const cv = $("cena"); cv.width = cena.c.width; cv.height = cena.c.height; cv.getContext("2d").drawImage(cena.c, 0, 0); cv.hidden = false;
+  $("camDica").textContent = "Câmera de exemplo · folha encontrada";
+  desenharContorno(cena.quad);
+  clearTimeout(tAuto);
+  if ($("camAuto").getAttribute("aria-pressed") === "true"){
+    tAuto = setTimeout(() => { if (!$("tCamera").hidden && cena){ $("camDica").textContent = "Segure firme…"; tAuto = setTimeout(() => !$("tCamera").hidden && disparar(), 900); } }, 1600);
+  }
+}
+function desenharContorno(quad){
+  const svg = $("contorno"), pol = svg.querySelector("polygon"), cv = $("cena");
+  if (!quad){ pol.setAttribute("points", ""); return; }
+  // a cena é "object-fit: cover": converte para a tela
+  const r = svg.getBoundingClientRect(), s = Math.max(r.width / cv.width, r.height / cv.height);
+  const ox = (r.width - cv.width * s) / 2, oy = (r.height - cv.height * s) / 2;
+  pol.setAttribute("points", quad.map(p => `${ox + p.x * s},${oy + p.y * s}`).join(" "));
+}
+function pararCamera(){
+  clearTimeout(tAuto);
+  if (fluxo){ fluxo.getTracks().forEach(t => t.stop()); fluxo = null; }
+}
+let docAlvo = null;
+async function disparar(){
+  clearTimeout(tAuto);
+  $("flash").classList.remove("on"); void $("flash").offsetWidth; $("flash").classList.add("on");
+  let foto, cantos;
+  if (fluxo){
+    const v = $("video"); foto = document.createElement("canvas"); foto.width = v.videoWidth; foto.height = v.videoHeight;
+    foto.getContext("2d").drawImage(v, 0, 0);
+    cantos = cantosPadrao(foto);   // na versão real: detecção automática das bordas
+  } else if (cena){
+    // "detecção": os cantos da folha, puxados um pouquinho para dentro (não pegar a mesa)
+    foto = cena.c;
+    const cx = cena.quad.reduce((s, p) => s + p.x, 0) / 4, cy = cena.quad.reduce((s, p) => s + p.y, 0) / 4;
+    cantos = cena.quad.map(p => ({ x: p.x + (cx - p.x) * .015, y: p.y + (cy - p.y) * .015 }));
+  } else return;
+  await abrirBordasNova({ foto, cantos, filtro: "realcado", rot: 0 });
+}
+const cantosPadrao = f => { const mx = f.width * .08, my = f.height * .08; return [{ x: mx, y: my }, { x: f.width - mx, y: my }, { x: f.width - mx, y: f.height - my }, { x: mx, y: f.height - my }]; };
+function atualizarPilha(){
+  const n = novas.length;
+  $("camPilha").hidden = !n; $("camPilhaVazia").hidden = !!n;
+  if (n){ $("camPilhaN").textContent = n; $("camPilhaImg").src = novas[n - 1].mini; }
+}
+async function fotosDaGaleria(arqs){
+  for (const f of arqs){
+    const url = URL.createObjectURL(f);
+    try {
+      const im = new Image(); im.src = url; await im.decode();
+      const s = Math.min(1, 2400 / Math.max(im.naturalWidth, im.naturalHeight));
+      const c = document.createElement("canvas"); c.width = Math.round(im.naturalWidth * s); c.height = Math.round(im.naturalHeight * s);
+      c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
+      const p = { foto: c, cantos: cantosPadrao(c), filtro: "realcado", rot: 0 };
+      processando("Endireitando…"); await espera(); await prepararPagina(p); processando(false);
+      novas.push(p);
+    } finally { URL.revokeObjectURL(url); }
+  }
+  atualizarPilha();
+  if (novas.length) concluirCaptura();
+}
+
+/* ================= ajustar bordas ================= */
+let bordasPag = null, escala = 1;
+async function abrirBordasNova(p){
+  bordasPag = p; editandoBordas = null;
+  $("bordBaseNova").hidden = false; $("bordBaseEdit").hidden = true;
+  $("bordTitulo").textContent = refazendo ? "Nova foto da página" : `Página ${novas.length + 1}`;
+  $("bordMais").hidden = !!refazendo; $("bordConcluir").textContent = refazendo ? "Usar esta" : "Concluir";
+  ir("tBordas"); await espera(); montarBordas();
+}
+async function abrirBordasEditar(p){
+  bordasPag = { ...p, cantos: p.cantos.map(c => ({ ...c })) }; editandoBordas = p;
+  $("bordBaseNova").hidden = true; $("bordBaseEdit").hidden = false;
+  $("bordTitulo").textContent = "Ajustar bordas";
+  ir("tBordas"); await espera(); montarBordas();
+}
+function montarBordas(){
+  const foto = bordasPag.foto, palco = $("palco"), cv = $("bordCanvas");
+  const r = palco.getBoundingClientRect(), maxW = r.width - 48, maxH = r.height - 48;
+  escala = Math.min(maxW / foto.width, maxH / foto.height);
+  cv.width = Math.round(foto.width * escala * devicePixelRatio); cv.height = Math.round(foto.height * escala * devicePixelRatio);
+  cv.style.width = Math.round(foto.width * escala) + "px"; cv.style.height = Math.round(foto.height * escala) + "px";
+  const g = cv.getContext("2d"); g.imageSmoothingQuality = "high"; g.drawImage(foto, 0, 0, cv.width, cv.height);
+  const Q = $("quadro"); Q.querySelectorAll(".alca").forEach(a => a.remove());
+  bordasPag.cantos.forEach((c, i) => {
+    const a = document.createElement("div"); a.className = "alca"; a.innerHTML = "<i></i>"; a.dataset.i = i;
+    a.setAttribute("role", "slider"); a.setAttribute("aria-label", ["Canto superior esquerdo", "Canto superior direito", "Canto inferior direito", "Canto inferior esquerdo"][i]);
+    Q.append(a); arrastarAlca(a, i);
+  });
+  desenharBordas();
+}
+function desenharBordas(){
+  const c = bordasPag.cantos;
+  $("bordSvg").querySelector("polygon").setAttribute("points", c.map(p => `${p.x * escala},${p.y * escala}`).join(" "));
+  $("quadro").querySelectorAll(".alca").forEach((a, i) => { a.style.left = c[i].x * escala + "px"; a.style.top = c[i].y * escala + "px"; });
+}
+function arrastarAlca(a, i){
+  let lupa = null;
+  a.addEventListener("pointerdown", e => {
+    e.preventDefault(); a.setPointerCapture(e.pointerId);
+    lupa = document.createElement("div"); lupa.className = "lupa"; const lc = document.createElement("canvas"); lc.width = 220; lc.height = 220; lc.style.width = lc.style.height = "110px"; lupa.append(lc); $("palco").append(lupa);
+    mover(e);
+  });
+  const mover = e => {
+    if (!lupa) return;
+    const r = $("bordCanvas").getBoundingClientRect(), f = bordasPag.foto;
+    const x = Math.max(0, Math.min(f.width, (e.clientX - r.left) / escala)), y = Math.max(0, Math.min(f.height, (e.clientY - r.top) / escala));
+    bordasPag.cantos[i] = { x, y }; desenharBordas();
+    // lupa acima do dedo
+    const pr = $("palco").getBoundingClientRect();
+    lupa.style.left = (e.clientX - pr.left - 55) + "px"; lupa.style.top = Math.max(4, e.clientY - pr.top - 150) + "px";
+    // lupa: mostra ~2,2× ampliado o que está embaixo do dedo
+    const g = lupa.querySelector("canvas").getContext("2d"), sl = 50 / escala;
+    g.fillStyle = "#000"; g.fillRect(0, 0, 220, 220);
+    g.drawImage(f, x - sl / 2, y - sl / 2, sl, sl, 0, 0, 220, 220);
+  };
+  a.addEventListener("pointermove", mover);
+  const fim = () => { lupa?.remove(); lupa = null; };
+  a.addEventListener("pointerup", fim); a.addEventListener("pointercancel", fim);
+}
+$("bordTudo").onclick = () => { const f = bordasPag.foto; bordasPag.cantos = [{ x: 0, y: 0 }, { x: f.width, y: 0 }, { x: f.width, y: f.height }, { x: 0, y: f.height }]; desenharBordas(); };
+async function confirmarBordaNova(){
+  processando("Endireitando a folha…"); await espera();
+  await prepararPagina(bordasPag); processando(false);
+  if (refazendo){ // "Refazer" de uma página do documento: troca a foto, mantém o lugar
+    Object.assign(refazendo, bordasPag, { previas: null });
+    const i = docAtual.paginas.indexOf(refazendo); refazendo = null;
+    abrirDoc(docAtual, i); avisar(`Página ${i + 1} trocada`); return null;
+  }
+  novas.push(bordasPag); atualizarPilha();
+  return bordasPag;
+}
+$("bordMais").onclick = async () => { if (await confirmarBordaNova() === null) return; ir("tCamera"); $("camDica").textContent = "Próxima página…"; if (fluxo) $("camDica").textContent = "Enquadre a próxima folha"; else mostrarCenaExemplo(); };
+$("bordConcluir").onclick = async () => { if (await confirmarBordaNova() === null) return; concluirCaptura(); };
+$("bordRefazer").onclick = () => { ir("tCamera"); if (!fluxo) mostrarCenaExemplo(); };
+$("bordVoltar").onclick = () => { if (editandoBordas) abrirDoc(docAtual, docAtual.paginas.indexOf(editandoBordas)); else { ir("tCamera"); if (!fluxo) mostrarCenaExemplo(); } };
+$("bordCancelar").onclick = () => abrirDoc(docAtual, docAtual.paginas.indexOf(editandoBordas));
+$("bordAplicar").onclick = async () => {
+  const p = editandoBordas; p.cantos = bordasPag.cantos;
+  processando("Endireitando…"); await espera(); await prepararPagina(p); processando(false);
+  abrirDoc(docAtual, docAtual.paginas.indexOf(p)); avisar("Bordas ajustadas");
+};
+function concluirCaptura(){
+  pararCamera();
+  if (!novas.length){ ir(docAlvo ? "tDoc" : "tInicio"); return; }
+  if (docAlvo){ docAlvo.paginas.push(...novas); abrirDoc(docAlvo, docAlvo.paginas.length - novas.length); avisar(`${novas.length} ${novas.length > 1 ? "páginas adicionadas" : "página adicionada"}`); }
+  else {
+    const d = { id: ++seq, nome: nomePadrao(), criado: new Date(), paginas: novas.slice() };
+    docs.unshift(d); abrirDoc(d, 0);
+  }
+  novas = [];
+}
+function nomePadrao(){ const d = new Date(), z = v => String(v).padStart(2, "0"); return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}_${z(d.getHours())}${z(d.getMinutes())}_Documento`; }
+
+/* ================= documento ================= */
+let pagVista = 0;
+function abrirDoc(d, i = 0){
+  docAtual = d; pagVista = Math.max(0, Math.min(i ?? 0, d.paginas.length - 1));
+  ir("tDoc"); desenharDoc(true);
+}
+function desenharDoc(rolar){
+  const d = docAtual;
+  $("docNome").textContent = d.nome;
+  $("docInfo").textContent = `${d.paginas.length} ${d.paginas.length > 1 ? "páginas" : "página"} · toque para renomear`;
+  const C = $("carrossel"); C.innerHTML = "";
+  d.paginas.forEach(p => { const s = document.createElement("div"); s.className = "slide"; const im = document.createElement("img"); im.alt = ""; im.src = grande(p); s.append(im); C.append(s); });
+  if (rolar) requestAnimationFrame(() => { C.scrollLeft = pagVista * C.clientWidth; });
+  desenharIndic(); desenharFiltros();
+}
+const grandeCache = new WeakMap();
+function grande(p){ // imagem da página no tamanho da tela
+  let u = grandeCache.get(p.pronta); if (!u){ u = miniatura(p.pronta, 900); grandeCache.set(p.pronta, u); } return u;
+}
+function desenharIndic(){
+  const I = $("indic"), n = docAtual.paginas.length; I.innerHTML = "";
+  if (n <= 12) for (let i = 0; i < n; i++){ const b = document.createElement("i"); if (i === pagVista) b.className = "on"; I.append(b); }
+  const t = document.createElement("span"); t.textContent = ` ${pagVista + 1} de ${n}`; I.append(t);
+}
+$("carrossel").addEventListener("scroll", () => {
+  const C = $("carrossel"), i = Math.round(C.scrollLeft / Math.max(1, C.clientWidth));
+  if (i !== pagVista && docAtual){ pagVista = i; desenharIndic(); desenharFiltros(); }
+}, { passive: true });
+async function desenharFiltros(){
+  const F = $("filtros"), p = docAtual.paginas[pagVista]; if (!p) return;
+  F.innerHTML = "";
+  for (const [k, rot] of FILTROS){
+    const b = document.createElement("button"); b.className = "filtro"; b.setAttribute("aria-pressed", p.filtro === k);
+    const im = document.createElement("img"); im.alt = ""; b.append(im, document.createTextNode(rot));
+    b.onclick = async () => {
+      if (p.filtro === k) return;
+      p.filtro = k; processando("Aplicando…"); await espera();
+      p.pronta = girarCanvas(aplicarFiltro(p.reta, k), p.rot); p.mini = miniatura(p.pronta); processando(false);
+      desenharDoc(false);
+    };
+    F.append(b);
+    // prévia pequena de cada filtro
+    if (!p.previas) p.previas = {};
+    if (!p.previas[k]){ const pq = document.createElement("canvas"), s = 160 / p.reta.width; pq.width = 160; pq.height = Math.round(p.reta.height * s); pq.getContext("2d").drawImage(p.reta, 0, 0, pq.width, pq.height); p.previas[k] = miniatura(girarCanvas(aplicarFiltro(pq, k), p.rot), 112); }
+    im.src = p.previas[k];
+  }
+}
+$("fGirar").onclick = () => {
+  const p = docAtual.paginas[pagVista]; if (!p) return;
+  p.rot = (p.rot + 1) % 4; p.pronta = girarCanvas(p.pronta, 1); p.mini = miniatura(p.pronta); p.previas = null;
+  desenharDoc(false);
+};
+$("fBordas").onclick = () => { const p = docAtual.paginas[pagVista]; if (p) abrirBordasEditar(p); };
+$("fAdd").onclick = () => abrirCamera(docAtual);
+$("fRefazer").onclick = () => {
+  const p = docAtual.paginas[pagVista]; if (!p) return;
+  refazendo = p; abrirCamera(null).then(() => { $("camDica").textContent = `Tirando de novo a página ${pagVista + 1}`; });
+};
+$("fExcluir").onclick = () => folhaBaixo({
+  titulo: `Excluir a página ${pagVista + 1}?`, texto: docAtual.paginas.length > 1 ? "Ela sai do documento." : "É a única página: o documento inteiro vai ser excluído.",
+  opcoes: [{ t: "Excluir página", perigo: true, f: () => {
+    docAtual.paginas.splice(pagVista, 1);
+    if (!docAtual.paginas.length){ docs = docs.filter(x => x !== docAtual); ir("tInicio"); desenharInicio(); avisar("Documento excluído"); return; }
+    abrirDoc(docAtual, Math.min(pagVista, docAtual.paginas.length - 1)); avisar("Página excluída");
+  } }],
+});
+$("docVoltar").onclick = () => { ir("tInicio"); desenharInicio(); };
+$("docTitulo").onclick = renomear;
+$("docMenu").onclick = () => folhaBaixo({
+  titulo: docAtual.nome,
+  opcoes: [
+    { t: "Renomear", f: renomear },
+    { t: "Organizar páginas", f: abrirGrade },
+    { t: "Excluir documento", perigo: true, f: () => folhaBaixo({ titulo: "Excluir o documento?", texto: `“${docAtual.nome}” e as ${docAtual.paginas.length} páginas somem do celular.`, opcoes: [{ t: "Excluir documento", perigo: true, f: () => { docs = docs.filter(x => x !== docAtual); ir("tInicio"); desenharInicio(); avisar("Documento excluído"); } }] }) },
+  ],
+});
+function renomear(){
+  folhaBaixo({ titulo: "Nome do documento", campo: docAtual.nome, ok: "Salvar nome", aoOk: v => { if (v.trim()){ docAtual.nome = limparNome(v); desenharDoc(false); } } });
+}
+const limparNome = s => s.replace(/[\\/:*?"<>|]/g, "-").trim();
+
+/* ================= organizar (arrastar) ================= */
+function abrirGrade(){ ir("tGrade"); desenharGrade(); }
+function desenharGrade(){
+  const G = $("grade"); G.innerHTML = "";
+  docAtual.paginas.forEach((p, i) => {
+    const d = document.createElement("div"); d.className = "peca"; d.dataset.i = i;
+    d.innerHTML = `<img alt=""><span>${i + 1}</span>`; d.querySelector("img").src = p.mini;
+    G.append(d);
+  });
+}
+(() => {
+  const G = $("grade"); let seg = null, timer = null;
+  G.addEventListener("pointerdown", e => {
+    const d = e.target.closest(".peca"); if (!d) return;
+    const x0 = e.clientX, y0 = e.clientY, i = +d.dataset.i;
+    seg = { d, i, x0, y0, ativo: false, id: e.pointerId };
+    timer = setTimeout(() => { // segurar = começa a arrastar
+      if (!seg) return; seg.ativo = true; d.classList.add("arrastando"); G.style.touchAction = "none";
+      const f = document.createElement("img"); f.className = "fantasma"; f.src = docAtual.paginas[i].mini; f.style.left = x0 + "px"; f.style.top = y0 + "px"; document.body.append(f); seg.f = f;
+      navigator.vibrate?.(20);
+    }, 280);
+  });
+  G.addEventListener("pointermove", e => {
+    if (!seg) return;
+    if (!seg.ativo){ if (Math.hypot(e.clientX - seg.x0, e.clientY - seg.y0) > 10){ clearTimeout(timer); seg = null; } return; }
+    e.preventDefault();
+    seg.f.style.left = e.clientX + "px"; seg.f.style.top = e.clientY + "px";
+    G.querySelectorAll(".peca").forEach(p => p.classList.remove("alvo"));
+    const alvo = document.elementFromPoint(e.clientX, e.clientY)?.closest(".peca");
+    if (alvo && alvo !== seg.d) alvo.classList.add("alvo");
+  });
+  const fim = e => {
+    clearTimeout(timer); if (!seg) return;
+    const { ativo, d, i } = seg;
+    if (ativo){
+      const alvo = document.elementFromPoint(e.clientX, e.clientY)?.closest(".peca");
+      seg.f.remove(); G.style.touchAction = "";
+      if (alvo && alvo !== d){ const j = +alvo.dataset.i; const [p] = docAtual.paginas.splice(i, 1); docAtual.paginas.splice(j, 0, p); avisar(`Página ${i + 1} agora é a ${j + 1}`); }
+      desenharGrade();
+    } else if (e.type === "pointerup"){ abrirDoc(docAtual, i); }
+    seg = null;
+  };
+  G.addEventListener("pointerup", fim); G.addEventListener("pointercancel", fim);
+  G.addEventListener("contextmenu", e => e.preventDefault());
+})();
+$("gradeVoltar").onclick = $("gradePronto").onclick = () => abrirDoc(docAtual, pagVista);
+$("docGrade").onclick = abrirGrade;
+
+/* ================= folha de baixo ================= */
+function folhaBaixo({ titulo, texto, opcoes, campo, ok, aoOk, corpo }){
+  const v = document.createElement("div"); v.className = "veu";
+  v.innerHTML = `<div class="folha-baixo" role="dialog" aria-modal="true"><div class="puxador"></div><h3></h3></div>`;
+  const F = v.querySelector(".folha-baixo"); F.querySelector("h3").textContent = titulo;
+  const fechar = () => { v.classList.remove("on"); setTimeout(() => v.remove(), 220); };
+  if (texto){ const p = document.createElement("p"); p.textContent = texto; F.append(p); }
+  if (corpo) corpo(F, fechar);
+  if (campo !== undefined){
+    const l = document.createElement("label"); l.className = "campo"; l.innerHTML = `<span class="linha"><input enterkeyhint="done"></span>`;
+    const inp = l.querySelector("input"); inp.value = campo; F.append(l);
+    const b = document.createElement("button"); b.className = "btn principal"; b.textContent = ok || "OK";
+    b.onclick = () => { fechar(); aoOk(inp.value); };
+    inp.onkeydown = e => { if (e.key === "Enter") b.click(); };
+    F.append(b); setTimeout(() => { inp.focus(); inp.select(); }, 250);
+  }
+  if (opcoes){
+    const L = document.createElement("div"); L.className = "opcoes-lista";
+    for (const o of opcoes){ const b = document.createElement("button"); if (o.perigo) b.className = "perigo"; b.textContent = o.t; b.onclick = () => { fechar(); setTimeout(o.f, 230); }; L.append(b); }
+    const c = document.createElement("button"); c.textContent = "Cancelar"; c.style.color = "var(--tinta-2)"; c.onclick = fechar; L.append(c);
+    F.append(L);
+  }
+  v.addEventListener("click", e => { if (e.target === v) fechar(); });
+  celular.append(v); requestAnimationFrame(() => v.classList.add("on"));
+  return fechar;
+}
+
+/* ================= salvar / enviar ================= */
+$("bSalvar").onclick = () => {
+  let formato = "pdf";
+  folhaBaixo({
+    titulo: "Salvar ou enviar",
+    corpo: (F, fechar) => {
+      F.insertAdjacentHTML("beforeend", `
+        <label class="campo">Nome do arquivo<span class="linha"><input id="sNome" enterkeyhint="done"><span class="ext" id="sExt">.pdf</span></span></label>
+        <div class="seg" role="group" aria-label="Formato"><button id="sPdf" aria-pressed="true">PDF</button><button id="sJpg" aria-pressed="false">JPG</button></div>
+        <p id="sInfo"></p>
+        <button class="btn principal" id="sEnviar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>Enviar (WhatsApp, e-mail…)</button>
+        <button class="btn" id="sBaixar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>Salvar no celular</button>`);
+      const nome = F.querySelector("#sNome"); nome.value = docAtual.nome;
+      const info = () => {
+        const n = docAtual.paginas.length;
+        F.querySelector("#sExt").textContent = formato === "pdf" ? ".pdf" : n > 1 ? `_p01.jpg…` : ".jpg";
+        F.querySelector("#sInfo").textContent = formato === "pdf" ? `Um PDF com ${n} ${n > 1 ? "páginas" : "página"}.` : `${n} ${n > 1 ? "imagens JPG, uma por página" : "imagem JPG"}.`;
+      };
+      const seg = f => { formato = f; F.querySelector("#sPdf").setAttribute("aria-pressed", f === "pdf"); F.querySelector("#sJpg").setAttribute("aria-pressed", f === "jpg"); info(); };
+      F.querySelector("#sPdf").onclick = () => seg("pdf"); F.querySelector("#sJpg").onclick = () => seg("jpg");
+      info();
+      const gerar = async () => {
+        docAtual.nome = limparNome(nome.value) || docAtual.nome;
+        processando(formato === "pdf" ? "Montando o PDF…" : "Preparando as imagens…"); await espera();
+        try { return formato === "pdf" ? [await gerarPdf(docAtual)] : await gerarJpgs(docAtual); } finally { processando(false); }
+      };
+      F.querySelector("#sEnviar").onclick = async () => {
+        const arqs = await gerar();
+        if (navigator.canShare?.({ files: arqs })){
+          try { await navigator.share({ files: arqs, title: docAtual.nome }); fechar(); avisar("Enviado"); }
+          catch (e) { if (e.name !== "AbortError") avisar("Não consegui abrir o compartilhar"); }
+        } else { avisar("Este navegador não envia arquivos direto — usei “Salvar no celular”"); baixar(arqs); fechar(); }
+      };
+      F.querySelector("#sBaixar").onclick = async () => { const arqs = await gerar(); baixar(arqs); fechar(); avisar(arqs.length > 1 ? `${arqs.length} imagens salvas em Downloads` : `“${arqs[0].name}” salvo em Downloads`); desenharDoc(false); };
+    },
+  });
+};
+function baixar(arqs){
+  for (const f of arqs){ const a = document.createElement("a"); a.href = URL.createObjectURL(f); a.download = f.name; document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000); }
+}
+const paraJpeg = c => new Promise(r => c.toBlob(b => r(b), "image/jpeg", .88));
+async function gerarJpgs(d){
+  const out = [];
+  for (let i = 0; i < d.paginas.length; i++){
+    const b = await paraJpeg(d.paginas[i].pronta);
+    out.push(new File([b], d.paginas.length > 1 ? `${d.nome}_p${String(i + 1).padStart(2, "0")}.jpg` : `${d.nome}.jpg`, { type: "image/jpeg" }));
+  }
+  return out;
+}
+// PDF simples: uma imagem JPEG por página, página A4 de largura
+async function gerarPdf(d){
+  const enc = new TextEncoder(), partes = [], offs = [];
+  let tam = 0;
+  const add = x => { const u = typeof x === "string" ? enc.encode(x) : x; partes.push(u); tam += u.length; };
+  const obj = (n, corpo) => { offs[n] = tam; add(`${n} 0 obj\n`); corpo(); add("\nendobj\n"); };
+  add("%PDF-1.4\n%\xE2\xE3\xCF\xD3\n");
+  const n = d.paginas.length, kids = [];
+  for (let i = 0; i < n; i++) kids.push(3 + i * 3);
+  obj(1, () => add("<< /Type /Catalog /Pages 2 0 R >>"));
+  obj(2, () => add(`<< /Type /Pages /Count ${n} /Kids [${kids.map(k => k + " 0 R").join(" ")}] >>`));
+  for (let i = 0; i < n; i++){
+    const c = d.paginas[i].pronta, jpg = new Uint8Array(await (await paraJpeg(c)).arrayBuffer());
+    const W = 595.28, H = +(W * c.height / c.width).toFixed(2);
+    const pg = 3 + i * 3, im = pg + 1, ct = pg + 2, conteudo = `q ${W} 0 0 ${H} 0 0 cm /Im0 Do Q`;
+    obj(pg, () => add(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /XObject << /Im0 ${im} 0 R >> >> /Contents ${ct} 0 R >>`));
+    obj(im, () => { add(`<< /Type /XObject /Subtype /Image /Width ${c.width} /Height ${c.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpg.length} >>\nstream\n`); add(jpg); add("\nendstream"); });
+    obj(ct, () => add(`<< /Length ${conteudo.length} >>\nstream\n${conteudo}\nendstream`));
+  }
+  const total = 3 + n * 3, xref = tam;
+  add(`xref\n0 ${total}\n0000000000 65535 f \n`);
+  for (let k = 1; k < total; k++) add(String(offs[k]).padStart(10, "0") + " 00000 n \n");
+  add(`trailer\n<< /Size ${total} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);
+  return new File(partes, `${d.nome}.pdf`, { type: "application/pdf" });
+}
+
+/* ================= início ================= */
+function desenharInicio(){
+  const L = $("lista"); L.innerHTML = "";
+  if (!docs.length){
+    L.innerHTML = `<div class="vazio"><div><div class="folha"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3.5"/></svg></div>
+      <strong>Nenhum documento ainda</strong>Toque em <b>Digitalizar</b> e aponte a câmera para a folha.<br>As bordas são encontradas sozinhas.</div></div>`;
+    return;
+  }
+  const h = document.createElement("h2"); h.textContent = "Documentos"; L.append(h);
+  for (const d of docs){
+    const b = document.createElement("button"); b.className = "doc";
+    b.innerHTML = `<img alt=""><span class="inf"><b></b><small></small></span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="color:var(--tinta-2)"><path d="M9 5l7 7-7 7"/></svg>`;
+    b.querySelector("img").src = d.paginas[0].mini; b.querySelector("b").textContent = d.nome;
+    const hr = d.criado.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    b.querySelector("small").textContent = `${d.paginas.length} ${d.paginas.length > 1 ? "páginas" : "página"} · hoje, ${hr}`;
+    b.onclick = () => abrirDoc(d, 0);
+    L.append(b);
+  }
+}
+
+/* ================= botões gerais ================= */
+$("bDigitalizar").onclick = () => abrirCamera(null);
+$("camFechar").onclick = () => { if (novas.length) concluirCaptura(); else { refazendo = null; pararCamera(); ir(camDe); } };
+$("camDisparo").onclick = disparar;
+$("camPilha").onclick = concluirCaptura;
+$("camAuto").onclick = () => { const b = $("camAuto"), on = b.getAttribute("aria-pressed") !== "true"; b.setAttribute("aria-pressed", on); avisar(on ? "Automático: tira a foto quando a folha fica parada" : "Manual: toque no botão para tirar"); if (on && cena && !fluxo) mostrarCenaExemplo(); else clearTimeout(tAuto); };
+$("camFlash").onclick = () => { const b = $("camFlash"), on = b.getAttribute("aria-pressed") !== "true"; b.setAttribute("aria-pressed", on); b.style.color = on ? "#FFD34D" : "#fff"; };
+$("camGaleria").onclick = () => $("arqGaleria").click();
+$("arqGaleria").onchange = e => { const a = [...e.target.files]; e.target.value = ""; if (a.length) fotosDaGaleria(a); };
+$("bTema").onclick = () => {
+  const r = document.documentElement, escuro = r.dataset.theme ? r.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  r.dataset.theme = escuro ? "light" : "dark";
+};
+window.addEventListener("resize", () => { if (!$("tBordas").hidden && bordasPag) montarBordas(); if (!$("tCamera").hidden && cena) desenharContorno(cena.quad); });
+
+desenharInicio();
+</script>
+</body>
+</html>

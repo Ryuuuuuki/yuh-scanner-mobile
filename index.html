@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#1F4FD1">
+<meta name="description" content="Digitalize documentos com a câmera do celular: a folha sai endireitada, limpa e em PDF.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Yuh Scanner">
+<title>Yuh Scanner</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icones/icone-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="icones/apple-touch-icon.png">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div class="celular" id="celular">
+
+  <!-- ===== início ===== -->
+  <section class="tela" id="tInicio">
+    <header class="barra">
+      <h1><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M9 7h6M9 11h6M9 15h4"/></svg>Yuh Scanner</h1>
+      <button class="ic" id="bTema" aria-label="Trocar tema claro/escuro"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+    </header>
+    <div class="lista" id="lista"></div>
+    <button class="fab" id="bDigitalizar"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3.5"/></svg>Digitalizar</button>
+  </section>
+
+  <!-- ===== câmera ===== -->
+  <section class="tela camera" id="tCamera" hidden>
+    <div class="visor" id="visor">
+      <video id="video" playsinline muted autoplay hidden></video>
+      <canvas class="cena" id="cena" hidden></canvas>
+      <svg class="contorno" id="contorno"><polygon points=""/></svg>
+      <div class="cam-topo">
+        <button class="ic" id="camFechar" aria-label="Fechar câmera"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+        <span style="flex:1"></span>
+        <button class="pilula" id="camAuto" aria-pressed="true" title="Tira a foto sozinho quando a folha fica parada">Auto</button>
+        <button class="ic" id="camFlash" aria-label="Flash" aria-pressed="false" hidden><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></button>
+      </div>
+      <div class="cam-dica" id="camDica">Abrindo a câmera…</div>
+      <div class="flash" id="flash"></div>
+      <div class="cam-erro" id="camErro" hidden><div><b>Não consegui abrir a câmera</b><span id="camErroTxt">Libere o acesso à câmera para este app nas configurações do navegador.</span><br><button class="btn principal" id="camGaleria2">Escolher foto da galeria</button></div></div>
+    </div>
+    <div class="cam-base">
+      <button class="pilha" id="camPilha" aria-label="Ver páginas tiradas" hidden><img id="camPilhaImg" alt=""><span id="camPilhaN">0</span></button>
+      <span id="camPilhaVazia" style="justify-self:start"></span>
+      <button class="disparo" id="camDisparo" aria-label="Tirar foto"><i></i></button>
+      <button class="galeria" id="camGaleria"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>Galeria</button>
+      <input type="file" id="arqGaleria" accept="image/*" multiple hidden>
+    </div>
+  </section>
+
+  <!-- ===== ajustar bordas ===== -->
+  <section class="tela bordas" id="tBordas" hidden>
+    <header class="barra">
+      <button class="ic" id="bordVoltar" aria-label="Voltar" style="color:#fff"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <h1 style="font-size:17px" id="bordTitulo">Ajustar bordas</h1>
+      <button class="link" id="bordTudo" style="color:#7FA2FF">Folha toda</button>
+    </header>
+    <div class="palco" id="palco"><div class="quadro" id="quadro"><canvas id="bordCanvas"></canvas><svg id="bordSvg"><polygon points=""/></svg></div></div>
+    <div class="dica-b">Arraste as bolinhas até os cantos da folha</div>
+    <div class="bordas-base" id="bordBaseNova">
+      <button class="btn escuro" id="bordRefazer">Refazer</button>
+      <button class="btn escuro" id="bordMais">+ Outra página</button>
+      <button class="btn principal claro" id="bordConcluir">Concluir</button>
+    </div>
+    <div class="bordas-base" id="bordBaseEdit" hidden>
+      <button class="btn escuro" id="bordCancelar">Cancelar</button>
+      <button class="btn principal claro" id="bordAplicar">Aplicar</button>
+    </div>
+  </section>
+
+  <!-- ===== documento ===== -->
+  <section class="tela" id="tDoc" hidden>
+    <header class="barra">
+      <button class="ic" id="docVoltar" aria-label="Voltar para o início"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <button class="titulo" id="docTitulo"><b id="docNome"></b><small id="docInfo"></small></button>
+      <button class="ic" id="docGrade" aria-label="Organizar páginas"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
+      <button class="ic" id="docMenu" aria-label="Mais opções"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
+    </header>
+    <div class="carrossel" id="carrossel"></div>
+    <div class="indic" id="indic"></div>
+    <div class="filtros" id="filtros"></div>
+    <nav class="ferramentas">
+      <button class="ferr" id="fAdd"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="3" width="13" height="17" rx="2"/><path d="M19 9v10a2 2 0 0 1-2 2H8"/><path d="M10.5 8v7M7 11.5h7"/></svg>Página</button>
+      <button class="ferr" id="fBordas"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg>Bordas</button>
+      <button class="ferr" id="fGirar"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>Girar</button>
+      <button class="ferr" id="fRefazer"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3.5"/></svg>Refazer</button>
+      <button class="ferr perigo" id="fExcluir"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>Excluir</button>
+    </nav>
+    <div class="acao-base"><button class="btn principal" id="bSalvar" style="width:100%"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>Salvar ou enviar</button></div>
+  </section>
+
+  <!-- ===== organizar ===== -->
+  <section class="tela" id="tGrade" hidden>
+    <header class="barra">
+      <button class="ic" id="gradeVoltar" aria-label="Voltar"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <h1 style="font-size:17px">Organizar páginas</h1>
+      <button class="link" id="gradePronto">Pronto</button>
+    </header>
+    <div class="grade" id="grade"></div>
+    <div class="dica-g">Segure e arraste para mudar a ordem · toque para abrir</div>
+  </section>
+
+  <div class="aviso" id="aviso" role="status"></div>
+</div>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
