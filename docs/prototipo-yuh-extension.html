@@ -149,6 +149,41 @@ legend{font-weight:bold;color:#1351b4;padding:0 6px}
 .pareamento{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
 .qr{width:180px;height:180px;background:#fff;border:1px solid var(--linha);border-radius:12px;padding:12px}
 
+/* conectar */
+.cam{position:absolute;inset:0;background:#000;z-index:8;display:flex;flex-direction:column;color:#fff}
+.cam-topo{display:flex;align-items:center;gap:6px;padding:12px 10px}
+.cam-topo b{flex:1;font-size:15px}
+.cam .ic{color:#fff}
+.visor{flex:1;position:relative;display:grid;place-items:center;background:radial-gradient(circle at 50% 40%,#3a3f46,#111)}
+.mira{width:220px;height:220px;position:relative}
+.mira i{position:absolute;width:44px;height:44px;border:4px solid #7FA2FF}
+.mira i:nth-child(1){left:0;top:0;border-right:0;border-bottom:0;border-radius:14px 0 0 0}
+.mira i:nth-child(2){right:0;top:0;border-left:0;border-bottom:0;border-radius:0 14px 0 0}
+.mira i:nth-child(3){left:0;bottom:0;border-right:0;border-top:0;border-radius:0 0 0 14px}
+.mira i:nth-child(4){right:0;bottom:0;border-left:0;border-top:0;border-radius:0 0 14px 0}
+.mira .linha-scan{position:absolute;left:10px;right:10px;height:2px;background:#7FA2FF;box-shadow:0 0 12px #7FA2FF;animation:varre 1.6s ease-in-out infinite}
+@keyframes varre{0%,100%{top:14px}50%{top:200px}}
+.mira canvas{position:absolute;left:26px;top:26px;width:168px;height:168px;opacity:.85;border-radius:8px}
+.cam-dica{text-align:center;padding:16px 24px 26px;font-size:14px;color:#cfd6df}
+.cam-dica b{color:#fff}
+.tela-c{position:absolute;inset:0;background:var(--painel);z-index:8;display:flex;flex-direction:column}
+.tela-c .meio{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center}
+.codigo{display:flex;gap:8px}
+.codigo span{width:48px;height:60px;border-radius:12px;background:var(--papel);border:2px solid var(--caneta);display:grid;place-items:center;font-size:30px;font-weight:700;color:var(--caneta)}
+.p-codigo .codigo span{width:40px;height:50px;font-size:24px}
+.tela-c .acoes{padding:14px 16px 20px;display:flex;flex-direction:column;gap:8px}
+.pcs{display:flex;flex-direction:column;gap:6px}
+.pc-item{display:flex;align-items:center;gap:10px;border:1px solid var(--linha);background:var(--papel);border-radius:12px;padding:10px 12px;text-align:left;width:100%}
+.pc-item[aria-pressed="true"]{border-color:var(--caneta);box-shadow:0 0 0 2px var(--caneta-suave)}
+.pc-item b{display:block;font-size:14px}
+.pc-item small{font-size:12px;color:var(--tinta-2)}
+.pc-item .st{width:9px;height:9px;border-radius:50%;background:var(--livre);flex:none}
+.pc-item .st.off{background:#9aa7b6}
+.opc .pc.nenhum{color:var(--ocupado)}
+.opc .pc.nenhum i{background:var(--ocupado)}
+.tempo{font-size:12px;color:var(--tinta-2)}
+.tempo b{color:var(--tinta)}
+.p-codigo{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;padding:6px 0}
 .nota{max-width:1500px;margin:0 auto;padding:0 22px 22px;color:#c9d3df;font-size:13px}
 .nota b{color:#fff}
 .zoom{position:fixed;inset:0;background:rgba(0,0,0,.8);display:grid;place-items:center;z-index:50;cursor:zoom-out}
@@ -165,6 +200,7 @@ legend{font-weight:bold;color:#1351b4;padding:0 6px}
       <div class="c-barra">
         <button class="ic" aria-label="Voltar"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 5l-7 7 7 7"/></svg></button>
         <b>RG Maria de Souza<small>2 páginas · frente e verso</small></b>
+        <button class="ic" id="cMenu" aria-label="Menu"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
       </div>
       <div class="c-folha"><img id="cImg" alt="RG digitalizado"></div>
       <div class="c-base"><button class="btn principal" id="cSalvar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>Salvar ou enviar</button></div>
@@ -225,9 +261,7 @@ legend{font-weight:bold;color:#1351b4;padding:0 6px}
             <b><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M9 7h6M9 11h6M9 15h4"/></svg>Yuh Extension</b>
             <button class="ic" id="pConfig" title="Conectar celular" aria-label="Conectar celular"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg></button>
           </div>
-          <div class="conexoes">
-            <span class="chip" title="Recebe o que você mandar do celular"><i></i>Celular: Galaxy do Iuri</span>
-            <span class="chip" title="Yuh Scanner para Windows aberto neste PC"><i></i>Yuh Scanner do PC</span>
+          <div class="conexoes" id="conexoes">
           </div>
           <div class="p-corpo" id="pCorpo"></div>
         </aside>
@@ -235,7 +269,7 @@ legend{font-weight:bold;color:#1351b4;padding:0 6px}
     </div>
   </div>
 </div>
-<p class="nota"><b>Protótipo.</b> Toque em <b>Salvar ou enviar</b> no celular e escolha <b>Levar para o formulário no PC</b>. O documento aparece na Yuh Extension; abra, confira e toque em <b>Preencher este formulário</b>. Os dados e o site são fictícios. Nada é enviado de verdade.</p>
+<p class="nota"><b>Protótipo.</b> Começa <b>sem nada conectado</b>. No celular, toque em <b>Salvar ou enviar → Levar para o formulário no PC</b> (ou no menu ⋮ → <b>Conectar ao PC</b>) e siga a conexão por QR Code. Depois envie o RG, abra na Yuh Extension, confira e toque em <b>Preencher este formulário</b>. Os dados e o site são fictícios. Nada é enviado de verdade.</p>
 
 <script>
 "use strict";
@@ -283,24 +317,99 @@ const DOCS_PC = [
   { id: "cert-ana", titulo: "Certidão de nascimento Ana", tipo: "Certidão de nascimento", img: null, origem: "Yuh Scanner do PC" },
 ];
 let recebidos = [], mapaConhecido = false, tela = "lista";
+// conexão celular ↔ navegador (começa sem nada conectado)
+let pcs = [{ nome: "Edge · NOTEBOOK-CASA", ligado: false, conectado: false }, { nome: "Chrome · PC-TABELIONATO", ligado: true, conectado: false }];
+let celulares = [{ nome: "iPhone da Ana", quando: "conectado ontem", ligado: false }];
+let pcEscolhido = null, qrTimer = null, qrValidade = 120, codigo = "4821", pareando = false;
+const conectados = () => pcs.filter(p => p.conectado);
 
 /* ================= CELULAR ================= */
-$("cSalvar").onclick = () => {
+function folhaC(html){
   const v = document.createElement("div"); v.className = "veu";
-  v.innerHTML = `<div class="folha-baixo"><div class="puxador"></div><h3>Salvar ou enviar</h3>
-    <button class="opc destaque" id="oPc"><span class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></span>
-      <span><b>Levar para o formulário no PC</b><small>Lê os dados e manda para a Yuh Extension</small><span class="pc"><i></i>Chrome · PC-TABELIONATO</span></span></button>
-    <button class="opc"><span class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg></span><span><b>Enviar (WhatsApp, e-mail…)</b><small>PDF, um ou vários arquivos</small></span></button>
-    <button class="opc"><span class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg></span><span><b>Salvar no celular</b><small>PDF ou JPG</small></span></button>
-    <button class="btn" id="oCanc" style="height:42px;border:0;background:none;color:var(--tinta-2)">Cancelar</button></div>`;
+  v.innerHTML = `<div class="folha-baixo"><div class="puxador"></div>${html}<button class="btn" data-f style="height:42px;border:0;background:none;color:var(--tinta-2)">Cancelar</button></div>`;
   $("celular").append(v);
-  v.querySelector("#oCanc").onclick = () => v.remove();
-  v.onclick = e => { if (e.target === v) v.remove(); };
-  v.querySelector("#oPc").onclick = () => { v.remove(); levarParaPc(); };
+  v.addEventListener("click", e => { if (e.target === v || e.target.closest("[data-f]")) v.remove(); });
+  return v;
+}
+const ICO_PC = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>';
+$("cSalvar").onclick = () => {
+  const c = conectados(), alvo = pcEscolhido || c.find(p => p.ligado) || c[0];
+  const destino = alvo ? `<span class="pc${alvo.ligado ? "" : " nenhum"}"><i></i>${alvo.nome}${alvo.ligado ? "" : " · desligado"}</span>` : `<span class="pc nenhum"><i></i>Nenhum PC conectado · toque para conectar</span>`;
+  const v = folhaC(`<h3>Salvar ou enviar</h3>
+    <button class="opc destaque" id="oPc"><span class="ico">${ICO_PC}</span>
+      <span style="flex:1"><b>Levar para o formulário no PC</b><small>Lê os dados e manda para a Yuh Extension</small>${destino}</span>${c.length > 1 ? '<span style="font-size:12px;color:var(--caneta);font-weight:700" id="oTrocar">trocar</span>' : ""}</button>
+    <button class="opc"><span class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg></span><span><b>Enviar (WhatsApp, e-mail…)</b><small>PDF, um ou vários arquivos</small></span></button>
+    <button class="opc"><span class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg></span><span><b>Salvar no celular</b><small>PDF ou JPG</small></span></button>`);
+  v.querySelector("#oPc").onclick = e => {
+    v.remove();
+    if (!c.length) return abrirLeitorQr();
+    if (e.target.id === "oTrocar") return escolherPc();
+    if (!alvo.ligado) return avisoC(`${alvo.nome} está desligado. Abra o Chrome nesse PC ou troque o destino.`);
+    levarParaPc(alvo);
+  };
 };
-function levarParaPc(){
+function escolherPc(){
+  const atual = pcEscolhido || conectados().find(x => x.ligado);
+  const v = folhaC(`<h3>Para qual PC?</h3><div class="pcs">${conectados().map((p, i) => `<button class="pc-item" data-i="${i}" aria-pressed="${p === atual}"><span class="st${p.ligado ? "" : " off"}"></span><span><b>${p.nome}</b><small>${p.ligado ? "ligado agora" : "desligado"}</small></span></button>`).join("")}</div>`);
+  v.querySelectorAll(".pc-item").forEach(b => b.onclick = () => { pcEscolhido = conectados()[+b.dataset.i]; v.remove(); $("cSalvar").click(); });
+}
+function avisoC(t){ const a = document.createElement("div"); a.className = "c-aviso"; a.style.whiteSpace = "normal"; a.style.width = "300px"; a.style.textAlign = "center"; a.textContent = t; $("celular").append(a); setTimeout(() => a.remove(), 3200); }
+$("cMenu").onclick = () => {
+  const c = conectados();
+  const v = folhaC(`<h3>Yuh Scanner Mobile</h3>
+    <button class="opc" id="mCon"><span class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 17h4v4"/></svg></span><span><b>Conectar ao PC</b><small>Ler o QR Code da Yuh Extension</small></span></button>
+    <div class="p-sec" style="margin-top:6px"><span>PCs conectados</span></div>
+    <div class="pcs">${c.length ? c.map(p => `<div class="pc-item"><span class="st${p.ligado ? "" : " off"}"></span><span style="flex:1"><b>${p.nome}</b><small>${p.ligado ? "ligado agora" : "desligado"}</small></span><button class="voltar" style="align-self:center;color:var(--carimbo)">Desconectar</button></div>`).join("") : '<div class="vazio-p">Nenhum ainda.</div>'}</div>`);
+  v.querySelector("#mCon").onclick = () => { v.remove(); abrirLeitorQr(); };
+  v.querySelectorAll(".pcs .voltar").forEach((b, i) => b.onclick = () => { const p = c[i]; p.conectado = false; if (pcEscolhido === p) pcEscolhido = null; v.remove(); avisoC(`${p.nome} desconectado`); });
+};
+// câmera lendo o QR da extensão
+function abrirLeitorQr(){
+  const t = document.createElement("div"); t.className = "cam"; t.id = "cCam";
+  t.innerHTML = `<div class="cam-topo"><button class="ic" aria-label="Fechar"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6L6 18"/></svg></button><b>Conectar ao PC</b></div>
+    <div class="visor"><div class="mira"><i></i><i></i><i></i><i></i><canvas id="cQr" width="168" height="168" hidden></canvas><span class="linha-scan"></span></div></div>
+    <div class="cam-dica" id="cDica">No PC, abra a <b>Yuh Extension</b> e toque no <b>ícone de celular</b> no topo. Depois aponte para o QR Code.<br><button class="btn" id="cAbrirLa" style="margin-top:12px;background:#222b37;border-color:#384455;color:#fff;height:40px">(protótipo) mostrar o QR no PC</button></div>`;
+  $("celular").append(t);
+  t.querySelector(".cam-topo .ic").onclick = () => { t.remove(); pareando = false; };
+  t.querySelector("#cAbrirLa").onclick = () => abrirPareamentoPc();
+  pareando = true;
+  if (tela === "par") setTimeout(lerQr, 1200);
+}
+function lerQr(){
+  const t = $("cCam"); if (!t || !pareando) return;
+  const q = t.querySelector("#cQr"); q.hidden = false; desenharQr(q);
+  $("cDica").innerHTML = "<b>QR Code encontrado!</b>";
+  setTimeout(() => {
+    t.remove();
+    const c = document.createElement("div"); c.className = "tela-c"; c.id = "cCodigo";
+    c.innerHTML = `<div class="c-barra"><b>Conectar ao PC</b></div>
+      <div class="meio"><div style="width:56px;height:56px;border-radius:16px;display:grid;place-items:center;background:var(--caneta-suave);color:var(--caneta)">${ICO_PC}</div>
+        <b style="font-size:17px">Chrome · PC-TABELIONATO</b>
+        <span style="color:var(--tinta-2);font-size:14px">Confira se o <b>mesmo código</b> aparece na tela do PC:</span>
+        <div class="codigo">${[...codigo].map(d => `<span>${d}</span>`).join("")}</div>
+        <span style="color:var(--tinta-2);font-size:12px">Isso garante que você está conectando o seu PC, e não outro.</span></div>
+      <div class="acoes"><button class="btn principal" id="cIgual">Os códigos são iguais</button><button class="btn" id="cDif" style="border:0;background:none;color:var(--tinta-2)">São diferentes · cancelar</button></div>`;
+    $("celular").append(c);
+    mostrarCodigoNoPc();
+    c.querySelector("#cIgual").onclick = () => concluirPareamento(c);
+    c.querySelector("#cDif").onclick = () => { c.remove(); pareando = false; abrirPareamentoPc(); avisoC("Conexão cancelada. Nada foi conectado."); };
+  }, 900);
+}
+function concluirPareamento(c){
+  pareando = false;
+  const pc = pcs.find(p => p.nome === "Chrome · PC-TABELIONATO"); pc.conectado = true; pcEscolhido = null;
+  pcs.find(p => p.nome.startsWith("Edge")).conectado = true; // um segundo PC já conectado antes, desligado agora (para mostrar o "trocar")
+  if (!celulares.some(x => x.nome === "Galaxy do Iuri")) celulares.unshift({ nome: "Galaxy do Iuri", quando: "conectado agora", ligado: true });
+  c.innerHTML = `<div class="meio"><div style="width:72px;height:72px;border-radius:50%;background:var(--livre);display:grid;place-items:center"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 12.5l4.5 4.5L19 7"/></svg></div>
+    <b style="font-size:18px">Conectado!</b><span style="color:var(--tinta-2);font-size:14px">Agora em <b>Salvar ou enviar → Levar para o formulário no PC</b>, o documento vai direto para <b>Chrome · PC-TABELIONATO</b>.</span></div>
+    <div class="acoes"><button class="btn principal" id="cOk">Entendi</button></div>`;
+  c.querySelector("#cOk").onclick = () => c.remove();
+  clearInterval(qrTimer); desenharConexoes();
+  if (tela === "par") abrirPareamentoPc(true);
+}
+function levarParaPc(alvo){
   const e = document.createElement("div"); e.className = "enviando";
-  e.innerHTML = `<div><img class="kuru" src="${KURU}" alt=""><b>Enviando para Chrome · PC-TABELIONATO…</b><p style="font-size:13px;opacity:.8;margin:6px 0 0">Direto para o seu PC (criptografado)</p></div>`;
+  e.innerHTML = `<div><img class="kuru" src="${KURU}" alt=""><b>Enviando para ${alvo.nome}…</b><p style="font-size:13px;opacity:.8;margin:6px 0 0">Criptografado de ponta a ponta</p></div>`;
   $("celular").append(e);
   setTimeout(() => {
     e.innerHTML = `<div><div class="ok"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 12.5l4.5 4.5L19 7"/></svg></div><b>Chegou no PC</b><p style="font-size:13px;opacity:.85;margin:6px 0 0">Abra a Yuh Extension no Chrome</p></div>`;
@@ -310,6 +419,12 @@ function levarParaPc(){
 }
 
 /* ================= EXTENSÃO ================= */
+function desenharConexoes(){
+  const g = celulares.find(x => x.ligado);
+  $("conexoes").innerHTML = (g ? `<span class="chip" title="Recebe o que você mandar do celular"><i></i>Celular: ${g.nome}</span>` : `<span class="chip off"><i></i>Nenhum celular <button id="chipCon">Conectar</button></span>`)
+    + `<span class="chip" title="Yuh Scanner para Windows aberto neste PC"><i></i>Yuh Scanner do PC</span>`;
+  $("chipCon")?.addEventListener("click", () => abrirPareamentoPc());
+}
 function receberNoPc(){
   if (!recebidos.includes(DOC)) recebidos.unshift(DOC);
   $("extBolha").hidden = false;
@@ -323,10 +438,11 @@ function desenharLista(animar){
     <button class="imp" id="impArq"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M12 18v-6M9 15l3-3 3 3"/></svg>Importar documentos<small>PDF ou foto do computador</small></button>
   </div>`);
   C.insertAdjacentHTML("beforeend", `<div class="p-sec"><span>Recebidos do celular</span></div>`);
-  if (!recebidos.length) C.insertAdjacentHTML("beforeend", `<div class="vazio-p">Nada ainda. No celular, toque em <b>Salvar ou enviar → Levar para o formulário no PC</b>.</div>`);
+  if (!recebidos.length) C.insertAdjacentHTML("beforeend", celulares.some(x => x.ligado) ? `<div class="vazio-p">Nada ainda. No celular, toque em <b>Salvar ou enviar → Levar para o formulário no PC</b>.</div>` : `<div class="vazio-p">Nenhum celular conectado a este navegador.<br><button class="voltar" id="conVazio" style="margin-top:6px">Conectar um celular</button></div>`);
   for (const d of recebidos) C.append(cartaoDoc(d, animar));
   C.insertAdjacentHTML("beforeend", `<div class="mapa"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex:none;margin-top:1px"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><span>${mapaConhecido ? "<b>Este site já é conhecido</b> — o formulário foi mapeado antes e é preenchido na hora." : "<b>Site novo:</b> na primeira vez a IA lê <b>só os nomes dos campos</b> do formulário (nunca os dados) e guarda o mapa."}</span></div>`);
   $("impYuh").onclick = importarDoYuh;
+  $("conVazio")?.addEventListener("click", () => abrirPareamentoPc());
   $("impArq").onclick = () => avisoPainel("Aqui abre a janela do Windows para escolher um PDF ou foto.");
 }
 function cartaoDoc(d, animar){
@@ -413,20 +529,51 @@ const esperar = ms => new Promise(r => setTimeout(r, ms));
 $("siteEnviar").onclick = () => avisoPainel("(protótipo) Aqui o site enviaria o requerimento — depois de você conferir.");
 
 /* ---------- conectar celular ---------- */
-$("pConfig").onclick = () => {
-  tela = "par"; const C = $("pCorpo"); C.innerHTML = "";
-  C.insertAdjacentHTML("beforeend", `<button class="voltar" id="vv">‹ Voltar</button><div class="pareamento"><b style="font-size:16px">Conectar um celular</b>
-    <canvas class="qr" id="qr" width="180" height="180"></canvas>
-    <span style="color:var(--tinta-2);font-size:13px">No Yuh Scanner Mobile: <b>menu → Conectar ao PC</b> e aponte para este código. Faz uma vez só por celular.</span>
-    <div class="chip"><i></i>Galaxy do Iuri · conectado <button>Desconectar</button></div>
-    <div class="chip off"><i></i>iPhone da Ana · conectado ontem <button>Desconectar</button></div></div>`);
-  const g = $("qr").getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, 180, 180); g.fillStyle = "#1E2A3A";
-  for (let y = 0; y < 21; y++) for (let x = 0; x < 21; x++) if (Math.sin(x * 7.1 + y * 3.3) + Math.cos(x * y) > .3) g.fillRect(6 + x * 8, 6 + y * 8, 8, 8);
-  for (const [x, y] of [[0, 0], [14, 0], [0, 14]]){ g.fillStyle = "#1E2A3A"; g.fillRect(6 + x * 8, 6 + y * 8, 56, 56); g.fillStyle = "#fff"; g.fillRect(14 + x * 8, 14 + y * 8, 40, 40); g.fillStyle = "#1E2A3A"; g.fillRect(22 + x * 8, 22 + y * 8, 24, 24); }
-  $("vv").onclick = () => desenharLista();
-};
+function desenharQr(c){
+  const g = c.getContext("2d"), n = c.width, m = n / 22; g.fillStyle = "#fff"; g.fillRect(0, 0, n, n); g.fillStyle = "#1E2A3A";
+  for (let y = 0; y < 21; y++) for (let x = 0; x < 21; x++) if (Math.sin(x * 7.1 + y * 3.3) + Math.cos(x * y) > .3) g.fillRect(m / 2 + x * m, m / 2 + y * m, m, m);
+  for (const [x, y] of [[0, 0], [14, 0], [0, 14]]){ g.fillStyle = "#1E2A3A"; g.fillRect(m / 2 + x * m, m / 2 + y * m, 7 * m, 7 * m); g.fillStyle = "#fff"; g.fillRect(m * 1.5 + x * m, m * 1.5 + y * m, 5 * m, 5 * m); g.fillStyle = "#1E2A3A"; g.fillRect(m * 2.5 + x * m, m * 2.5 + y * m, 3 * m, 3 * m); }
+}
+function abrirPareamentoPc(feito){
+  tela = "par"; clearInterval(qrTimer);
+  if ($("painel").hidden){ $("painel").hidden = false; $("extBtn").setAttribute("aria-pressed", "true"); }
+  const C = $("pCorpo"); C.innerHTML = "";
+  C.insertAdjacentHTML("beforeend", `<button class="voltar" id="vv">‹ Voltar</button>
+    <div class="pareamento" id="parBox">
+      <b style="font-size:16px">Conectar um celular</b>
+      ${feito ? `<div class="resultado" style="width:100%"><b>Galaxy do Iuri conectado ✓</b><span>Tudo que ele mandar com “Levar para o formulário no PC” chega aqui.</span></div>` : `
+      <canvas class="qr" id="qr" width="180" height="180"></canvas>
+      <span class="tempo" id="tempo"></span>
+      <span style="color:var(--tinta-2);font-size:13px">No Yuh Scanner Mobile: <b>menu ⋮ → Conectar ao PC</b> e aponte a câmera para este código. É uma vez só por celular.</span>`}
+      <div class="p-sec" style="width:100%;margin-top:6px"><span>Celulares conectados a este navegador</span></div>
+      <div class="pcs" style="width:100%">${celulares.map((x, i) => `<div class="pc-item"><span class="st${x.ligado ? "" : " off"}"></span><span style="flex:1"><b>${x.nome}</b><small>${x.quando}</small></span><button class="voltar" data-i="${i}" style="align-self:center;color:var(--carimbo)">Desconectar</button></div>`).join("") || '<div class="vazio-p">Nenhum.</div>'}</div>
+    </div>`);
+  $("vv").onclick = () => { clearInterval(qrTimer); desenharLista(); };
+  C.querySelectorAll(".pcs .voltar").forEach(b => b.onclick = () => { celulares.splice(+b.dataset.i, 1); desenharConexoes(); abrirPareamentoPc(); });
+  if (feito) return;
+  desenharQr($("qr"));
+  qrValidade = 120;
+  const t = () => {
+    const m = Math.floor(qrValidade / 60), sg = String(qrValidade % 60).padStart(2, "0");
+    $("tempo").innerHTML = qrValidade > 0 ? `Código válido por <b>${m}:${sg}</b>` : `Código vencido · <button class="voltar" id="novoQr">gerar outro</button>`;
+    $("novoQr")?.addEventListener("click", () => abrirPareamentoPc());
+  };
+  t(); qrTimer = setInterval(() => { if (!$("tempo")) return clearInterval(qrTimer); qrValidade--; t(); if (qrValidade <= 0) clearInterval(qrTimer); }, 1000);
+  if (pareando && $("cCam")) setTimeout(lerQr, 1200);
+}
+function mostrarCodigoNoPc(){
+  clearInterval(qrTimer);
+  const box = $("parBox"); if (!box) return;
+  box.innerHTML = `<div class="p-codigo"><b style="font-size:16px">Galaxy do Iuri quer se conectar</b>
+    <span style="color:var(--tinta-2);font-size:13px">Confira se o celular mostra o mesmo código:</span>
+    <div class="codigo">${[...codigo].map(d => `<span>${d}</span>`).join("")}</div>
+    <div class="lendo" style="width:100%"><img class="kuru" src="${KURU}" alt=""><span>Esperando você confirmar no celular…</span></div></div>`;
+}
+$("pConfig").onclick = () => abrirPareamentoPc();
+
 $("extBtn").onclick = () => { const p = $("painel"); p.hidden = !p.hidden; $("extBtn").setAttribute("aria-pressed", !p.hidden); };
 
+desenharConexoes();
 desenharLista();
 </script>
 </body>
