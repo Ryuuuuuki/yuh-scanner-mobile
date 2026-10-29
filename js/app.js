@@ -4,7 +4,7 @@ import { acharFolha, cantosPadrao, movimento } from "./bordas.js";
 import * as banco from "./banco.js";
 import { montarPdf } from "./pdf.js";
 
-export const VERSAO = "1.0.0";
+export const VERSAO = "1.0.1";
 const $ = id => document.getElementById(id);
 const celular = $("celular");
 const FILTROS = [["realcado", "Realçado"], ["original", "Original"], ["cinza", "Cinza"], ["pb", "P&B"]];
@@ -23,7 +23,9 @@ const plural = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
 let empilhado = false; // um passo no histórico: o "voltar" do Android fecha a tela em vez de sair do app
 function ir(tela){
   for (const t of document.querySelectorAll(".tela")) t.hidden = t.id !== tela;
-  if (tela !== "tCamera") pararCamera();
+  // ajustando as bordas a câmera continua ligada (voltar para ela é instantâneo)
+  if (tela === "tBordas") clearTimeout(tDetecta);
+  else if (tela !== "tCamera") pararCamera();
   if (tela !== "tInicio" && !empilhado){ history.pushState({ yuh: 1 }, ""); empilhado = true; }
 }
 
@@ -79,7 +81,7 @@ async function carregarPagina(p){
 }
 
 /* ================= câmera ================= */
-let fluxo = null, trilha = null, cap = null, tDetecta = null, ultimo = null, paradoDesde = 0, semFolhaDesde = 0, armado = true, disparando = false;
+let fluxo = null, trilha = null, tDetecta = null, ultimo = null, paradoDesde = 0, semFolhaDesde = 0, armado = true, disparando = false;
 async function abrirCamera(paraDoc, desarmado = false){
   docAlvo = paraDoc || null;
   camDe = !$("tDoc").hidden ? "tDoc" : "tInicio";
@@ -90,13 +92,12 @@ async function abrirCamera(paraDoc, desarmado = false){
   const video = $("video");
   try {
     if (!navigator.mediaDevices?.getUserMedia) throw new Error("Este navegador não dá acesso à câmera.");
-    fluxo = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: "environment" }, width: { ideal: 3840 }, height: { ideal: 2160 } } });
+    fluxo = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: "environment" }, width: { ideal: 2560 }, height: { ideal: 1920 } } });
     if ($("tCamera").hidden){ pararCamera(); return; }
     trilha = fluxo.getVideoTracks()[0];
     try { await trilha.applyConstraints({ advanced: [{ focusMode: "continuous" }] }); } catch {}
     const capac = trilha.getCapabilities?.() || {};
     $("camFlash").hidden = !capac.torch;
-    cap = typeof ImageCapture !== "undefined" ? new ImageCapture(trilha) : null;
     video.srcObject = fluxo; video.hidden = false;
     await video.play().catch(() => {});
     $("camDica").textContent = "Procurando a folha…";
@@ -116,16 +117,20 @@ async function abrirCamera(paraDoc, desarmado = false){
 }
 function pararCamera(){
   clearTimeout(tDetecta); tDetecta = null;
-  if (fluxo){ fluxo.getTracks().forEach(t => t.stop()); fluxo = null; trilha = null; cap = null; }
+  if (fluxo){ fluxo.getTracks().forEach(t => t.stop()); fluxo = null; trilha = null; }
   $("camFlash").setAttribute("aria-pressed", "false"); $("camFlash").style.color = "";
 }
-// procura a folha no vídeo ~4 vezes por segundo; no modo Auto, tira a foto quando ela fica parada
+// procura a folha no vídeo (até 4 vezes por segundo; menos em celular mais lento);
+// no modo Auto, tira a foto quando ela fica parada
+let custoDeteccao = 0;
 function detectarAoVivo(){
   clearTimeout(tDetecta);
-  if (!fluxo || $("tCamera").hidden) return;
+  if (!fluxo || $("tCamera").hidden || disparando) return;
   const v = $("video");
   if (v.videoWidth){
+    const t0 = performance.now();
     const q = acharFolha(v), w = v.videoWidth, h = v.videoHeight;
+    custoDeteccao = custoDeteccao ? custoDeteccao * .7 + (performance.now() - t0) * .3 : performance.now() - t0;
     desenharContorno(q);
     const auto = $("camAuto").getAttribute("aria-pressed") === "true";
     if (!q){
@@ -146,7 +151,8 @@ function detectarAoVivo(){
     }
     ultimo = q;
   }
-  tDetecta = setTimeout(detectarAoVivo, 250);
+  // a busca nunca ocupa mais de ~1/4 do tempo: o celular continua respondendo ao toque
+  tDetecta = setTimeout(detectarAoVivo, Math.max(250, custoDeteccao * 4));
 }
 function desenharContorno(q){
   const pol = $("contorno").querySelector("polygon"), v = $("video");
@@ -155,20 +161,24 @@ function desenharContorno(q){
   const ox = (r.width - v.videoWidth * s) / 2, oy = (r.height - v.videoHeight * s) / 2;
   pol.setAttribute("points", q.map(p => `${ox + p.x * s},${oy + p.y * s}`).join(" "));
 }
+// tira a foto na hora: usa o quadro atual do vídeo (pedir a foto "em alta" ao Android
+// demora segundos e falha em vários aparelhos)
 async function disparar(){
-  if (disparando || !fluxo) return;
-  disparando = true;
+  const v = $("video");
+  if (disparando || !fluxo || !v.videoWidth) return;
+  disparando = true; clearTimeout(tDetecta);
   const f = $("flash"); f.classList.remove("on"); void f.offsetWidth; f.classList.add("on");
+  $("camDisparo").disabled = true;
   navigator.vibrate?.(30);
   try {
-    let foto = null;
-    // foto na resolução máxima da câmera (Android); senão, o quadro do vídeo
-    if (cap?.takePhoto){
-      try { foto = reduzir(await carregarImagem(await cap.takePhoto()), LADO_FOTO); } catch {}
-    }
-    if (!foto){ const v = $("video"); foto = reduzir(v, LADO_FOTO); }
+    const foto = reduzir(v, LADO_FOTO);   // congela o quadro antes de qualquer espera
+    processando("Preparando a foto…"); await esperar();
     await novaFoto(foto);
-  } finally { disparando = false; }
+  } catch (e) {
+    console.error(e); avisar("Não consegui tirar a foto, tente de novo");
+  } finally {
+    processando(false); disparando = false; $("camDisparo").disabled = false;
+  }
 }
 async function novaFoto(foto){
   const q = acharFolha(foto);
@@ -299,6 +309,14 @@ $("bordAplicar").onclick = async () => {
 // volta para a câmera mantendo as páginas já tiradas
 // desarmado: o Auto espera trocar a folha (não tira de novo a mesma)
 async function abrirCameraDeNovo(desarmado = true){
+  if (fluxo && trilha?.readyState === "live"){
+    // câmera ainda ligada: só volta para ela
+    ir("tCamera"); atualizarPilha();
+    armado = !desarmado; ultimo = null; paradoDesde = 0; semFolhaDesde = 0;
+    $("camDica").textContent = novas.length ? "Próxima página…" : "Procurando a folha…";
+    detectarAoVivo();
+    return;
+  }
   const guardadas = novas, alvo = docAlvo, de = camDe;
   const ab = abrirCamera(alvo, desarmado); novas = guardadas; camDe = de; atualizarPilha(); await ab;
   if (novas.length) $("camDica").textContent = "Próxima página…";
