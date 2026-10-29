@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yuh Extension · protótipo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --mesa:#DCE2E9; --painel:#F7F9FB; --papel:#FFFFFF; --tinta:#1E2A3A; --tinta-2:#5B6878; --linha:#C7D0DA;
+  --caneta:#1F4FD1; --caneta-suave:#E3EAFB; --sobre-caneta:#fff; --livre:#1E8A4C; --livre-suave:#DDF3E6; --ocupado:#B7791F; --ocupado-suave:#FCF0D9; --carimbo:#B42318;
+  --fonte:"Atkinson Hyperlegible",system-ui,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html,body{margin:0;height:100%}
+body{font-family:var(--fonte);font-size:15px;line-height:1.4;color:var(--tinta);background:radial-gradient(circle at 20% 10%,#2a3445,#0d1117);min-height:100vh}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--caneta);outline-offset:2px}
+
+.cena{display:grid;grid-template-columns:380px 1fr;gap:28px;padding:22px;align-items:start;max-width:1500px;margin:0 auto}
+@media (max-width:1100px){.cena{grid-template-columns:1fr}.celular{margin:0 auto}}
+.legenda{color:#c9d3df;font-size:13px;margin:0 0 8px 4px;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.legenda b{color:#fff}
+.passo{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#7FA2FF;color:#0E1A33;font-weight:700;font-size:12px}
+
+/* ================= CELULAR ================= */
+.celular{width:360px;height:740px;border-radius:40px;border:10px solid #000;background:var(--mesa);overflow:hidden;position:relative;display:flex;flex-direction:column;box-shadow:0 30px 70px rgba(0,0,0,.55)}
+.c-barra{display:flex;align-items:center;gap:6px;padding:12px 10px;background:var(--painel);border-bottom:1px solid var(--linha)}
+.c-barra b{flex:1;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.c-barra small{display:block;color:var(--tinta-2);font-size:11px;font-weight:400}
+.ic{width:40px;height:40px;display:grid;place-items:center;border:0;background:none;border-radius:10px}
+.c-folha{flex:1;display:grid;place-items:center;padding:16px}
+.c-folha img{max-width:100%;max-height:100%;box-shadow:0 2px 10px rgba(0,0,0,.25);border-radius:6px}
+.c-base{padding:10px 14px 16px;background:var(--painel)}
+.btn{height:48px;border-radius:14px;border:1px solid var(--linha);background:var(--painel);font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 14px;width:100%}
+.btn.principal{background:var(--caneta);border-color:var(--caneta);color:#fff}
+.btn:disabled{opacity:.5}
+.veu{position:absolute;inset:0;background:rgba(10,15,25,.5);display:flex;align-items:flex-end;z-index:5}
+.folha-baixo{width:100%;background:var(--painel);border-radius:22px 22px 0 0;padding:10px 16px 18px;display:flex;flex-direction:column;gap:10px;animation:sobe .22s ease}
+@keyframes sobe{from{transform:translateY(100%)}}
+.puxador{width:40px;height:5px;border-radius:999px;background:var(--linha);margin:0 auto 4px}
+.folha-baixo h3{margin:0;font-size:18px}
+.opc{display:flex;align-items:center;gap:12px;border:1px solid var(--linha);background:var(--papel);border-radius:14px;padding:12px;text-align:left;width:100%}
+.opc .ico{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:var(--caneta-suave);color:var(--caneta);flex:none}
+.opc b{display:block;font-size:15px}
+.opc small{display:block;color:var(--tinta-2);font-size:12px}
+.opc .pc{display:inline-flex;align-items:center;gap:5px;margin-top:4px;font-size:12px;color:var(--livre);font-weight:700}
+.opc .pc i{width:7px;height:7px;border-radius:50%;background:var(--livre)}
+.opc.destaque{border-color:var(--caneta);box-shadow:0 0 0 2px var(--caneta-suave)}
+.enviando{position:absolute;inset:0;background:rgba(10,15,25,.6);display:grid;place-items:center;z-index:6;color:#fff;text-align:center;padding:30px}
+.enviando .anel{width:64px;height:64px;border-radius:50%;border:5px solid rgba(255,255,255,.25);border-top-color:#fff;animation:gira .9s linear infinite;margin:0 auto 14px}
+.enviando .ok{width:64px;height:64px;border-radius:50%;background:var(--livre);display:grid;place-items:center;margin:0 auto 14px}
+@keyframes gira{to{transform:rotate(360deg)}}
+.c-aviso{position:absolute;left:50%;bottom:90px;transform:translateX(-50%);background:var(--tinta);color:#fff;padding:9px 14px;border-radius:12px;font-size:13px;white-space:nowrap;z-index:7}
+
+/* ================= NAVEGADOR ================= */
+.janela{background:#e9edf2;border-radius:12px;overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,.55);display:flex;flex-direction:column;height:740px;min-width:0}
+.abas-nav{display:flex;align-items:flex-end;gap:2px;padding:8px 10px 0;background:#d5dbe3}
+.bolinhas{display:flex;gap:6px;margin:0 10px 10px 2px}.bolinhas i{width:11px;height:11px;border-radius:50%;background:#f25f58}.bolinhas i:nth-child(2){background:#f9be33}.bolinhas i:nth-child(3){background:#3cc84a}
+.aba-nav{background:#e9edf2;border-radius:9px 9px 0 0;padding:8px 14px;font-size:12.5px;max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.barra-end{display:flex;align-items:center;gap:8px;padding:7px 10px;background:#e9edf2;border-bottom:1px solid #cfd6de}
+.end{flex:1;background:#fff;border-radius:999px;padding:6px 14px;font-size:13px;color:#4a5566;display:flex;align-items:center;gap:6px;min-width:0;white-space:nowrap;overflow:hidden}
+.end svg{flex:none;color:#4a5566}
+.ext-btn{width:34px;height:34px;border-radius:9px;border:0;background:transparent;display:grid;place-items:center;position:relative}
+.ext-btn:hover,.ext-btn[aria-pressed="true"]{background:#d5dbe3}
+.ext-btn img{width:20px;height:20px}
+.ext-btn .bolha{position:absolute;top:2px;right:2px;min-width:16px;height:16px;border-radius:999px;background:var(--carimbo);color:#fff;font-size:10px;font-weight:700;display:grid;place-items:center;padding:0 4px}
+.corpo-nav{flex:1;display:flex;min-height:0}
+
+/* site de exemplo (governo genérico) */
+.site{flex:1;overflow:auto;background:#f2f2f2;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333;min-width:0}
+.site-topo{background:#1351b4;color:#fff;padding:12px 24px;display:flex;align-items:center;gap:12px}
+.site-topo b{font-size:17px}.site-topo small{opacity:.85}
+.site-cont{max-width:760px;margin:18px auto;background:#fff;border:1px solid #ddd;border-radius:4px;padding:20px 26px 26px}
+.site-cont h2{margin:0 0 4px;font-size:20px;color:#1351b4}
+.site-cont p.sub{margin:0 0 16px;color:#666;font-size:13px}
+fieldset{border:1px solid #e1e1e1;border-radius:4px;padding:10px 16px 14px;margin:0 0 14px}
+legend{font-weight:bold;color:#1351b4;padding:0 6px}
+.lin{display:grid;grid-template-columns:repeat(6,1fr);gap:10px 14px}
+.cp{display:flex;flex-direction:column;gap:3px;font-size:12.5px;color:#444;position:relative}
+.cp.s2{grid-column:span 2}.cp.s3{grid-column:span 3}.cp.s4{grid-column:span 4}.cp.s6{grid-column:span 6}
+.cp input,.cp select{height:34px;border:1px solid #b9b9b9;border-radius:3px;padding:0 8px;font-family:Arial;font-size:14px;background:#fff;color:#222;transition:background .3s,border-color .3s}
+.cp.verde input,.cp.verde select{background:#e5f6ec;border-color:#1E8A4C}
+.cp.amarelo input,.cp.amarelo select{background:#fff4dc;border-color:#d39b2a}
+.cp .marca{position:absolute;right:6px;top:22px;font-size:11px;font-weight:bold;font-family:var(--fonte);pointer-events:none}
+.cp.verde .marca{color:#1E8A4C}.cp.amarelo .marca{color:#B7791F}
+.site-acoes{display:flex;justify-content:flex-end;gap:10px;margin-top:6px}
+.site-acoes button{height:38px;padding:0 20px;border-radius:20px;border:1px solid #1351b4;background:#fff;color:#1351b4;font-family:Arial;font-weight:bold}
+.site-acoes .env{background:#1351b4;color:#fff}
+
+/* ================= PAINEL DA EXTENSÃO ================= */
+.painel{width:380px;flex:none;background:var(--painel);border-left:1px solid var(--linha);display:flex;flex-direction:column;min-height:0;font-family:var(--fonte);font-size:14px}
+.p-topo{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--linha)}
+.p-topo b{flex:1;font-size:16px;display:flex;align-items:center;gap:8px}
+.p-topo b svg{color:var(--caneta)}
+.conexoes{display:flex;gap:6px;flex-wrap:wrap;padding:10px 14px 0}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;border:1px solid var(--linha);border-radius:999px;padding:4px 10px;background:var(--papel);color:var(--tinta-2)}
+.chip i{width:8px;height:8px;border-radius:50%;background:var(--livre)}
+.chip.off i{background:#9aa7b6}
+.chip button{border:0;background:none;color:var(--caneta);padding:0;font-size:12px}
+.p-corpo{flex:1;overflow-y:auto;padding:12px 14px 16px;display:flex;flex-direction:column;gap:12px}
+.importar{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.imp{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 8px;border:1px solid var(--linha);border-radius:12px;background:var(--papel);font-weight:700;font-size:13px;text-align:center}
+.imp small{font-weight:400;color:var(--tinta-2);font-size:11.5px}
+.imp:hover{border-color:var(--caneta);background:var(--caneta-suave)}
+.imp svg{color:var(--caneta)}
+.p-sec{font-size:12px;color:var(--tinta-2);margin:4px 0 -4px;display:flex;justify-content:space-between}
+.doc{display:flex;gap:10px;align-items:center;padding:8px;border:1px solid var(--linha);border-radius:12px;background:var(--papel);text-align:left;width:100%}
+.doc:hover{border-color:var(--caneta)}
+.doc img{width:52px;height:38px;object-fit:cover;border-radius:4px;flex:none;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.doc .inf{flex:1;min-width:0}
+.doc .inf b{display:block;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.doc .inf small{color:var(--tinta-2);font-size:11.5px}
+.doc .origem{font-size:10.5px;font-weight:700;border-radius:999px;padding:2px 7px;background:var(--caneta-suave);color:var(--caneta);flex:none}
+.doc.novo{animation:chega .6s ease}
+@keyframes chega{0%{transform:translateX(30px);opacity:0}100%{transform:none;opacity:1}}
+.vazio-p{color:var(--tinta-2);font-size:13px;text-align:center;padding:10px}
+
+/* ficha */
+.voltar{border:0;background:none;color:var(--caneta);padding:0;font-size:13px;display:inline-flex;gap:4px;align-items:center;align-self:flex-start}
+.ficha-img{position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--linha);background:#fff;cursor:zoom-in}
+.ficha-img img{width:100%;display:block}
+.ficha-img .tipo{position:absolute;left:8px;top:8px;background:rgba(30,42,58,.85);color:#fff;font-size:11.5px;border-radius:999px;padding:3px 9px}
+.lendo{display:flex;align-items:center;gap:10px;padding:12px;border-radius:12px;background:var(--caneta-suave);color:var(--caneta);font-weight:700;font-size:13px}
+.lendo .anel{width:18px;height:18px;border-radius:50%;border:3px solid rgba(31,79,209,.25);border-top-color:var(--caneta);animation:gira .8s linear infinite;flex:none}
+.fonte{font-size:11.5px;color:var(--tinta-2);display:flex;align-items:center;gap:6px}
+.campos{display:flex;flex-direction:column;gap:8px}
+.campo{display:flex;flex-direction:column;gap:2px}
+.campo label{font-size:11.5px;color:var(--tinta-2);display:flex;justify-content:space-between}
+.campo label .duv{color:var(--ocupado);font-weight:700}
+.campo{min-width:0}
+.campo input{width:100%;min-width:0;height:34px;border:1px solid var(--linha);border-radius:8px;padding:0 10px;background:var(--papel);font-size:14px}
+.campo.duvida input{border-color:#d39b2a;background:var(--ocupado-suave)}
+.duas{display:grid;grid-template-columns:2fr 1fr;gap:8px}
+.preencher{position:sticky;bottom:0;padding-top:6px;background:linear-gradient(transparent,var(--painel) 30%)}
+.resultado{border-radius:12px;padding:12px;background:var(--livre-suave);border:1px solid #9ad3b1;font-size:13px;display:flex;flex-direction:column;gap:6px}
+.resultado b{font-size:14px}
+.resultado .l{display:flex;gap:8px;align-items:center}
+.resultado .q{width:12px;height:12px;border-radius:3px;flex:none}
+.mapa{font-size:12px;color:var(--tinta-2);display:flex;align-items:flex-start;gap:6px;background:var(--papel);border:1px dashed var(--linha);border-radius:10px;padding:8px 10px}
+.mapa b{color:var(--tinta)}
+.pareamento{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+.qr{width:180px;height:180px;background:#fff;border:1px solid var(--linha);border-radius:12px;padding:12px}
+
+.nota{max-width:1500px;margin:0 auto;padding:0 22px 22px;color:#c9d3df;font-size:13px}
+.nota b{color:#fff}
+.zoom{position:fixed;inset:0;background:rgba(0,0,0,.8);display:grid;place-items:center;z-index:50;cursor:zoom-out}
+.zoom img{max-width:92vw;max-height:92vh;border-radius:8px}
+</style>
+</head>
+<body>
+
+<div class="cena">
+  <!-- ================= CELULAR ================= -->
+  <div>
+    <p class="legenda"><span class="passo">1</span><b>No celular</b>· Yuh Scanner Mobile, depois de digitalizar o RG</p>
+    <div class="celular" id="celular">
+      <div class="c-barra">
+        <button class="ic" aria-label="Voltar"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <b>RG Maria de Souza<small>2 páginas · frente e verso</small></b>
+      </div>
+      <div class="c-folha"><img id="cImg" alt="RG digitalizado"></div>
+      <div class="c-base"><button class="btn principal" id="cSalvar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>Salvar ou enviar</button></div>
+    </div>
+  </div>
+
+  <!-- ================= PC ================= -->
+  <div style="min-width:0">
+    <p class="legenda"><span class="passo">2</span><b>No PC</b>· Chrome com a <b style="color:#fff">Yuh Extension</b> aberta ao lado do site</p>
+    <div class="janela">
+      <div class="abas-nav"><div class="bolinhas"><i></i><i></i><i></i></div><div class="aba-nav">Requerimento de Certidão — Portal de Serviços</div></div>
+      <div class="barra-end">
+        <div class="end"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>servicos.exemplo.gov.br/requerimento/certidao</div>
+        <button class="ext-btn" id="extBtn" aria-pressed="true" title="Yuh Extension"><img id="extIco" alt=""><span class="bolha" id="extBolha" hidden>1</span></button>
+      </div>
+      <div class="corpo-nav">
+        <!-- site de exemplo -->
+        <div class="site">
+          <div class="site-topo"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M3 10l9-6 9 6M5 10v9h14v-9M9 19v-5h6v5"/></svg><div><b>Portal de Serviços</b><br><small>Site de exemplo · formulário fictício</small></div></div>
+          <form class="site-cont" id="form" onsubmit="return false">
+            <h2>Requerimento de certidão</h2>
+            <p class="sub">Preencha os dados do requerente conforme o documento de identificação.</p>
+            <fieldset><legend>Dados pessoais</legend>
+              <div class="lin">
+                <label class="cp s6">Nome completo *<input name="txtNomeRequerente"></label>
+                <label class="cp s2">CPF *<input name="cpf" placeholder="000.000.000-00"></label>
+                <label class="cp s2">Data de nascimento *<input name="dtNasc" placeholder="dd/mm/aaaa"></label>
+                <label class="cp s2">Sexo<select name="sexo"><option value="">Selecione</option><option>Feminino</option><option>Masculino</option></select></label>
+                <label class="cp s3">Nome da mãe *<input name="nomeMae"></label>
+                <label class="cp s3">Nome do pai<input name="nomePai"></label>
+                <label class="cp s3">Naturalidade (cidade)<input name="naturalidade"></label>
+                <label class="cp s1" style="grid-column:span 1">UF<select name="ufNat"><option value="">--</option><option>BA</option><option>SP</option><option>RJ</option><option>MG</option><option>PE</option></select></label>
+                <label class="cp s2">Nacionalidade<input name="nacionalidade"></label>
+              </div>
+            </fieldset>
+            <fieldset><legend>Documento de identificação</legend>
+              <div class="lin">
+                <label class="cp s2">Tipo<select name="tipoDoc"><option value="">Selecione</option><option>RG</option><option>CNH</option><option>Passaporte</option></select></label>
+                <label class="cp s2">Número<input name="numDoc"></label>
+                <label class="cp s1" style="grid-column:span 1">Órgão<input name="orgao"></label>
+                <label class="cp s1" style="grid-column:span 1">UF<select name="ufDoc"><option value="">--</option><option>BA</option><option>SP</option><option>RJ</option><option>MG</option><option>PE</option></select></label>
+                <label class="cp s2">Data de expedição<input name="dtExp" placeholder="dd/mm/aaaa"></label>
+              </div>
+            </fieldset>
+            <fieldset><legend>Contato</legend>
+              <div class="lin">
+                <label class="cp s3">E-mail<input name="email"></label>
+                <label class="cp s3">Telefone<input name="fone"></label>
+              </div>
+            </fieldset>
+            <div class="site-acoes"><button type="button">Limpar</button><button type="button" class="env" id="siteEnviar">Enviar requerimento</button></div>
+          </form>
+        </div>
+
+        <!-- painel lateral da extensão -->
+        <aside class="painel" id="painel">
+          <div class="p-topo">
+            <b><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M9 7h6M9 11h6M9 15h4"/></svg>Yuh Extension</b>
+            <button class="ic" id="pConfig" title="Conectar celular" aria-label="Conectar celular"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg></button>
+          </div>
+          <div class="conexoes">
+            <span class="chip" title="Recebe o que você mandar do celular"><i></i>Celular: Galaxy do Iuri</span>
+            <span class="chip" title="Yuh Scanner para Windows aberto neste PC"><i></i>Yuh Scanner do PC</span>
+          </div>
+          <div class="p-corpo" id="pCorpo"></div>
+        </aside>
+      </div>
+    </div>
+  </div>
+</div>
+<p class="nota"><b>Protótipo.</b> Toque em <b>Salvar ou enviar</b> no celular e escolha <b>Levar para o formulário no PC</b>. O documento aparece na Yuh Extension; abra, confira e toque em <b>Preencher este formulário</b>. Os dados e o site são fictícios. Nada é enviado de verdade.</p>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+
+/* ---------- imagens de exemplo ---------- */
+function rg(frente){
+  const c = document.createElement("canvas"); c.width = 860; c.height = 560; const g = c.getContext("2d");
+  const gr = g.createLinearGradient(0, 0, 860, 560); gr.addColorStop(0, frente ? "#e7f0e3" : "#e9efe6"); gr.addColorStop(1, frente ? "#d2e2cd" : "#d9e5d4");
+  g.fillStyle = gr; g.fillRect(0, 0, 860, 560);
+  for (let i = 0; i < 40; i++){ g.strokeStyle = "rgba(60,110,70,.08)"; g.beginPath(); g.arc(430, 280, 20 + i * 9, 0, 7); g.stroke(); }
+  g.fillStyle = "#2e5a35"; g.font = "bold 24px Arial"; g.fillText("REPÚBLICA FEDERATIVA DO BRASIL", 40, 50);
+  g.font = "16px Arial"; g.fillText("ESTADO DA BAHIA · SECRETARIA DA SEGURANÇA PÚBLICA", 40, 76);
+  if (frente){
+    g.fillStyle = "#b8c9b4"; g.fillRect(40, 110, 200, 260); g.fillStyle = "#7f927b"; g.beginPath(); g.arc(140, 200, 55, 0, 7); g.fill(); g.fillRect(70, 270, 140, 100);
+    g.fillStyle = "#2e5a35"; g.font = "15px Arial"; g.fillText("ASSINATURA DO TITULAR", 60, 420);
+    g.strokeStyle = "#1f3fb0"; g.lineWidth = 2.5; g.beginPath(); for (let x = 0; x < 180; x++) g.lineTo(60 + x, 460 + Math.sin(x / 7) * 14); g.stroke();
+    g.fillStyle = "#2e5a35"; g.font = "bold 18px Arial"; g.fillText("CARTEIRA DE IDENTIDADE", 330, 140);
+  } else {
+    const L = [["REGISTRO GERAL", "12.345.678-9"], ["DATA DE EXPEDIÇÃO", "05/08/2015"], ["NOME", "MARIA DE SOUZA EXEMPLO"], ["FILIAÇÃO", "JOÃO DE SOUZA"], ["", "JOANA DE SOUZA"], ["NATURALIDADE", "SALVADOR - BA"], ["DATA DE NASCIMENTO", "12/03/1980"], ["CPF", "123.456.789-09"]];
+    let y = 120;
+    for (const [r, v] of L){ g.fillStyle = "#4b6b50"; g.font = "13px Arial"; if (r) g.fillText(r, 40, y); g.fillStyle = "#111"; g.font = "bold 21px 'Courier New', monospace"; g.fillText(v, 40, y + 24); y += r ? 52 : 30; }
+    g.fillStyle = "#2e5a35"; g.font = "12px Arial"; g.fillText("SSP/BA · LEI Nº 7.116 DE 29/08/83", 520, 530);
+  }
+  return c.toDataURL("image/jpeg", .9);
+}
+const RG_FRENTE = rg(true), RG_VERSO = rg(false);
+$("cImg").src = RG_VERSO;
+// ícone da extensão
+(() => { const c = document.createElement("canvas"); c.width = c.height = 40; const g = c.getContext("2d"); g.fillStyle = "#1F4FD1"; g.beginPath(); g.roundRect(0, 0, 40, 40, 9); g.fill(); g.fillStyle = "#fff"; g.fillRect(12, 8, 16, 22); g.fillStyle = "#1F4FD1"; for (let i = 0; i < 4; i++) g.fillRect(15, 12 + i * 4.5, 10 - (i % 2) * 3, 2); $("extIco").src = c.toDataURL(); })();
+
+/* ---------- estado ---------- */
+const DOC = {
+  id: "rg-maria", titulo: "RG Maria de Souza", tipo: "RG (Carteira de Identidade) · Bahia", img: RG_VERSO, origem: "Celular",
+  campos: [
+    ["nome", "Nome", "MARIA DE SOUZA EXEMPLO"], ["cpf", "CPF", "123.456.789-09"], ["nasc", "Data de nascimento", "12/03/1980"],
+    ["mae", "Nome da mãe", "JOANA DE SOUZA"], ["pai", "Nome do pai", "JOÃO DE SOUZA"],
+    ["natCidade", "Naturalidade", "SALVADOR"], ["natUf", "UF", "BA"],
+    ["rg", "RG", "12.345.678-9"], ["orgao", "Órgão emissor", "SSP"], ["ufDoc", "UF", "BA"], ["exp", "Expedição", "05/08/2015", true],
+  ],
+};
+const DOCS_PC = [
+  { id: "cnh-jose", titulo: "CNH José Carlos Lima", tipo: "CNH digital · lida pelo QR Code", img: null, origem: "Yuh Scanner do PC", qr: true },
+  { id: "cert-ana", titulo: "Certidão de nascimento Ana", tipo: "Certidão de nascimento", img: null, origem: "Yuh Scanner do PC" },
+];
+let recebidos = [], mapaConhecido = false, tela = "lista";
+
+/* ================= CELULAR ================= */
+$("cSalvar").onclick = () => {
+  const v = document.createElement("div"); v.className = "veu";
+  v.innerHTML = `<div class="folha-baixo"><div class="puxador"></div><h3>Salvar ou enviar</h3>
+    <button class="opc destaque" id="oPc"><span class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></span>
+      <span><b>Levar para o formulário no PC</b><small>Lê os dados e manda para a Yuh Extension</small><span class="pc"><i></i>Chrome · PC-TABELIONATO</span></span></button>
+    <button class="opc"><span class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg></span><span><b>Enviar (WhatsApp, e-mail…)</b><small>PDF, um ou vários arquivos</small></span></button>
+    <button class="opc"><span class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg></span><span><b>Salvar no celular</b><small>PDF ou JPG</small></span></button>
+    <button class="btn" id="oCanc" style="height:42px;border:0;background:none;color:var(--tinta-2)">Cancelar</button></div>`;
+  $("celular").append(v);
+  v.querySelector("#oCanc").onclick = () => v.remove();
+  v.onclick = e => { if (e.target === v) v.remove(); };
+  v.querySelector("#oPc").onclick = () => { v.remove(); levarParaPc(); };
+};
+function levarParaPc(){
+  const e = document.createElement("div"); e.className = "enviando";
+  e.innerHTML = `<div><div class="anel"></div><b>Enviando para Chrome · PC-TABELIONATO…</b><p style="font-size:13px;opacity:.8;margin:6px 0 0">Direto para o seu PC (criptografado)</p></div>`;
+  $("celular").append(e);
+  setTimeout(() => {
+    e.innerHTML = `<div><div class="ok"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 12.5l4.5 4.5L19 7"/></svg></div><b>Chegou no PC</b><p style="font-size:13px;opacity:.85;margin:6px 0 0">Abra a Yuh Extension no Chrome</p></div>`;
+    receberNoPc();
+    setTimeout(() => e.remove(), 1600);
+  }, 1300);
+}
+
+/* ================= EXTENSÃO ================= */
+function receberNoPc(){
+  if (!recebidos.includes(DOC)) recebidos.unshift(DOC);
+  $("extBolha").hidden = false;
+  if (tela === "lista") desenharLista(true);
+}
+function desenharLista(animar){
+  tela = "lista";
+  const C = $("pCorpo"); C.innerHTML = "";
+  C.insertAdjacentHTML("beforeend", `<div class="importar">
+    <button class="imp" id="impYuh"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="8" rx="1.5"/><path d="M6 11V5h9l3 3v3"/><path d="M7 15h10"/></svg>Importar do Yuh Scanner<small>Digitalizados neste PC</small></button>
+    <button class="imp" id="impArq"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M12 18v-6M9 15l3-3 3 3"/></svg>Importar documentos<small>PDF ou foto do computador</small></button>
+  </div>`);
+  C.insertAdjacentHTML("beforeend", `<div class="p-sec"><span>Recebidos do celular</span></div>`);
+  if (!recebidos.length) C.insertAdjacentHTML("beforeend", `<div class="vazio-p">Nada ainda. No celular, toque em <b>Salvar ou enviar → Levar para o formulário no PC</b>.</div>`);
+  for (const d of recebidos) C.append(cartaoDoc(d, animar));
+  C.insertAdjacentHTML("beforeend", `<div class="mapa"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex:none;margin-top:1px"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><span>${mapaConhecido ? "<b>Este site já é conhecido</b> — o formulário foi mapeado antes e é preenchido na hora." : "<b>Site novo:</b> na primeira vez a IA lê <b>só os nomes dos campos</b> do formulário (nunca os dados) e guarda o mapa."}</span></div>`);
+  $("impYuh").onclick = importarDoYuh;
+  $("impArq").onclick = () => avisoPainel("Aqui abre a janela do Windows para escolher um PDF ou foto.");
+}
+function cartaoDoc(d, animar){
+  const b = document.createElement("button"); b.className = "doc" + (animar && d === recebidos[0] ? " novo" : "");
+  b.innerHTML = `<img alt=""><span class="inf"><b></b><small></small></span><span class="origem"></span>`;
+  b.querySelector("img").src = d.img || RG_FRENTE; b.querySelector("b").textContent = d.titulo; b.querySelector("small").textContent = d.tipo;
+  b.querySelector(".origem").textContent = d.origem === "Celular" ? "📱 celular" : "🖥 PC";
+  b.onclick = () => abrirFicha(d);
+  return b;
+}
+function importarDoYuh(){
+  tela = "yuh";
+  const C = $("pCorpo"); C.innerHTML = "";
+  C.insertAdjacentHTML("beforeend", `<button class="voltar" id="vv">‹ Voltar</button><div class="p-sec"><span>Últimos digitalizados no Yuh Scanner deste PC</span></div>`);
+  for (const d of DOCS_PC){ const b = cartaoDoc(d); b.onclick = () => avisoPainel(d.qr ? "A CNH digital é lida pelo QR Code: dados exatos, sem conferência de leitura." : "Abre a ficha igual à do RG."); C.append(b); }
+  $("vv").onclick = () => desenharLista();
+}
+function avisoPainel(t){
+  const a = document.createElement("div"); a.className = "c-aviso"; a.style.position = "fixed"; a.style.bottom = "30px"; a.style.left = "auto"; a.style.right = "40px"; a.style.transform = "none"; a.style.whiteSpace = "normal"; a.style.maxWidth = "320px"; a.textContent = t;
+  document.body.append(a); setTimeout(() => a.remove(), 3200);
+}
+function abrirFicha(d){
+  tela = "ficha"; $("extBolha").hidden = true;
+  const C = $("pCorpo"); C.innerHTML = "";
+  C.insertAdjacentHTML("beforeend", `<button class="voltar" id="vv">‹ Documentos</button>
+    <div class="ficha-img" id="fImg"><img alt="Documento"><span class="tipo"></span></div>
+    <div class="lendo" id="fLendo"><span class="anel"></span>Lendo o documento…</div>`);
+  C.querySelector(".ficha-img img").src = d.img; C.querySelector(".tipo").textContent = d.tipo;
+  $("vv").onclick = () => desenharLista();
+  $("fImg").onclick = () => { const z = document.createElement("div"); z.className = "zoom"; z.innerHTML = `<img alt="">`; z.querySelector("img").src = d.img; z.onclick = () => z.remove(); document.body.append(z); };
+  setTimeout(() => {
+    $("fLendo").outerHTML = `<div class="fonte"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.5l4.5 4.5L19 7"/></svg>Lido com Google Vision · confira os campos em amarelo</div>`;
+    const F = document.createElement("div"); F.className = "campos";
+    const lin = (k) => { const [id, rot, val, duv] = d.campos.find(c => c[0] === k); return `<div class="campo${duv ? " duvida" : ""}"><label><span>${rot}</span>${duv ? '<span class="duv">confira</span>' : ""}</label><input data-k="${id}" value="${val}"></div>`; };
+    F.innerHTML = lin("nome") + `<div class="duas">${lin("cpf")}${lin("nasc")}</div>` + lin("mae") + lin("pai") + `<div class="duas">${lin("natCidade")}${lin("natUf")}</div>` + `<div class="duas">${lin("rg")}${lin("exp")}</div>` + `<div class="duas">${lin("orgao")}${lin("ufDoc")}</div>`;
+    C.append(F);
+    F.querySelectorAll("input").forEach(i => i.oninput = () => { const c = d.campos.find(x => x[0] === i.dataset.k); c[2] = i.value; c[3] = false; i.parentElement.classList.remove("duvida"); i.parentElement.querySelector(".duv")?.remove(); });
+    C.insertAdjacentHTML("beforeend", `<div class="preencher"><button class="btn principal" id="bPreencher"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/></svg>Preencher este formulário</button></div>`);
+    $("bPreencher").onclick = () => preencher(d);
+  }, 1400);
+}
+
+/* ---------- preencher o site ---------- */
+// mapa: campo do site -> dado da ficha (é o que a IA devolve na 1ª vez)
+const MAPA = { txtNomeRequerente: "nome", cpf: "cpf", dtNasc: "nasc", nomeMae: "mae", nomePai: "pai", naturalidade: "natCidade", ufNat: "natUf", nacionalidade: "=BRASILEIRA", tipoDoc: "=RG", numDoc: "rg", orgao: "orgao", ufDoc: "ufDoc", dtExp: "exp" };
+async function preencher(d){
+  const bt = $("bPreencher"); bt.disabled = true;
+  const res = document.createElement("div");
+  if (!mapaConhecido){
+    bt.innerHTML = `<span class="anel" style="width:18px;height:18px;border-radius:50%;border:3px solid rgba(255,255,255,.35);border-top-color:#fff;animation:gira .8s linear infinite"></span>Mapeando o formulário com IA…`;
+    await esperar(1600); mapaConhecido = true;
+  }
+  bt.innerHTML = "Preenchendo…";
+  const form = $("form"), val = k => k.startsWith("=") ? k.slice(1) : d.campos.find(c => c[0] === k)?.[2];
+  const duv = k => d.campos.find(c => c[0] === k)?.[3];
+  let verdes = 0, amarelos = 0;
+  const vazios = [];
+  for (const el of form.querySelectorAll("input,select")){
+    const k = MAPA[el.name], cp = el.closest(".cp");
+    cp.classList.remove("verde", "amarelo"); cp.querySelector(".marca")?.remove();
+    if (!k){ if (el.name !== "email" && el.name !== "fone") vazios.push(cp.firstChild.textContent.replace("*", "").trim()); else vazios.push(cp.firstChild.textContent.trim()); continue; }
+    el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    await esperar(110);
+    if (el.tagName === "SELECT") el.value = val(k); else el.value = val(k);
+    const amarelo = duv(k) || k === "=BRASILEIRA";
+    cp.classList.add(amarelo ? "amarelo" : "verde");
+    const m = document.createElement("span"); m.className = "marca"; m.textContent = amarelo ? "confira" : "✓"; cp.append(m);
+    amarelo ? amarelos++ : verdes++;
+  }
+  bt.innerHTML = "Preencher de novo"; bt.disabled = false;
+  res.className = "resultado";
+  res.innerHTML = `<b>Pronto! Agora confira e envie no site.</b>
+    <span class="l"><span class="q" style="background:#1E8A4C"></span>${verdes} campos preenchidos</span>
+    <span class="l"><span class="q" style="background:#d39b2a"></span>${amarelos} para conferir (data de expedição e nacionalidade, que não está no RG)</span>
+    <span class="l"><span class="q" style="background:#c7d0da"></span>Sem dado no documento: ${vazios.join(", ")}</span>
+    <span style="color:var(--tinta-2);font-size:12px">A Yuh Extension nunca clica em “Enviar”. Quem envia é você.</span>`;
+  $("pCorpo").querySelector(".resultado")?.remove();
+  $("pCorpo").querySelector(".preencher").before(res);
+  res.scrollIntoView({ block: "nearest", behavior: "smooth" });
+}
+const esperar = ms => new Promise(r => setTimeout(r, ms));
+$("siteEnviar").onclick = () => avisoPainel("(protótipo) Aqui o site enviaria o requerimento — depois de você conferir.");
+
+/* ---------- conectar celular ---------- */
+$("pConfig").onclick = () => {
+  tela = "par"; const C = $("pCorpo"); C.innerHTML = "";
+  C.insertAdjacentHTML("beforeend", `<button class="voltar" id="vv">‹ Voltar</button><div class="pareamento"><b style="font-size:16px">Conectar um celular</b>
+    <canvas class="qr" id="qr" width="180" height="180"></canvas>
+    <span style="color:var(--tinta-2);font-size:13px">No Yuh Scanner Mobile: <b>menu → Conectar ao PC</b> e aponte para este código. Faz uma vez só por celular.</span>
+    <div class="chip"><i></i>Galaxy do Iuri · conectado <button>Desconectar</button></div>
+    <div class="chip off"><i></i>iPhone da Ana · conectado ontem <button>Desconectar</button></div></div>`);
+  const g = $("qr").getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, 180, 180); g.fillStyle = "#1E2A3A";
+  for (let y = 0; y < 21; y++) for (let x = 0; x < 21; x++) if (Math.sin(x * 7.1 + y * 3.3) + Math.cos(x * y) > .3) g.fillRect(6 + x * 8, 6 + y * 8, 8, 8);
+  for (const [x, y] of [[0, 0], [14, 0], [0, 14]]){ g.fillStyle = "#1E2A3A"; g.fillRect(6 + x * 8, 6 + y * 8, 56, 56); g.fillStyle = "#fff"; g.fillRect(14 + x * 8, 14 + y * 8, 40, 40); g.fillStyle = "#1E2A3A"; g.fillRect(22 + x * 8, 22 + y * 8, 24, 24); }
+  $("vv").onclick = () => desenharLista();
+};
+$("extBtn").onclick = () => { const p = $("painel"); p.hidden = !p.hidden; $("extBtn").setAttribute("aria-pressed", !p.hidden); };
+
+desenharLista();
+</script>
+</body>
+</html>
