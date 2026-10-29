@@ -5,7 +5,7 @@ import * as banco from "./banco.js";
 import { montarPdf } from "./pdf.js";
 import { sugestoesDeNome } from "./ocr.js";
 
-export const VERSAO = "1.1.0";
+export const VERSAO = "1.1.1";
 const $ = id => document.getElementById(id);
 const celular = $("celular");
 const FILTROS = [["realcado", "Realçado"], ["original", "Original"], ["cinza", "Cinza"], ["pb", "P&B"]];

@@ -14,7 +14,7 @@ Projeto do Iuri (GitHub `Ryuuuuuki`). Conversa em português, informal, explica�
 Playwright (Chromium) com câmera falsa: `--use-fake-device-for-media-stream --use-file-for-fake-video-capture=<arquivo.y4m>` (vídeo de uma folha sobre a mesa) e perfis `Pixel 7` / `iPhone 13`. WebKit não está instalado no ambiente: o Safari real só é testado no iPhone do Iuri. Para nomes com acento no download, rodar com `LANG=C.UTF-8`.
 
 ## Versões
-- 1.0.0 app; 1.0.1 foto com um toque (quadro do vídeo, câmera fica ligada nas bordas); 1.1.0 vários arquivos (salvar separado) + Sugerir nome.
+- 1.0.0 app; 1.0.1 foto com um toque (quadro do vídeo, câmera fica ligada nas bordas); 1.1.0 vários arquivos (salvar separado) + Sugerir nome; 1.1.1 sem `viewport-fit=cover` (no Android novo o app ficava por baixo da barra de navegação: o Chrome não informa a área segura).
 
 ## Pendências
 - Testar no iPhone e Android de verdade (câmera, flash, Auto, compartilhar).
