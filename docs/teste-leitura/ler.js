@@ -201,7 +201,7 @@ export function lerDocumento(texto, conf){
       case "orgao": poe("orgao", a); break;
       case "docIdentidade": poe("docIdentidade", a); break;
       case "categoria": { const m = /\b(ACC|A|B|C|D|E|AB|AC|AD|AE)\b/.exec(sem(a || "")); poe("categoria", m ? m[1] : ""); break; }
-      case "sexo": { const m = /\b(MASCULINO|FEMININO)\b/.exec(sem([a, b].join(" "))); poe("sexo", m ? m[1][0] + m[1].slice(1).toLowerCase() : ""); break; }
+      case "sexo": { const m = /\b(MASCULINO|FEMININO|M|F)\b/.exec(sem(a || "")) || /\b(MASCULINO|FEMININO)\b/.exec(sem(b || "")); poe("sexo", m ? (m[1][0] === "M" ? "Masculino" : "Feminino") : ""); break; }
       case "registroCnh": { const m = /\b(\d{9,11})\b/.exec((a || "") + " " + (b || "")); if (tipo === "CNH") poe("registroCnh", m ? m[1] : ""); break; }
       case "registroGeral": {
         if (tipo === "CNH") break;
@@ -238,6 +238,7 @@ export function lerDocumento(texto, conf){
 
   // ficha final com situação de cada campo: ok (verde), duvida (amarelo), falta (cinza)
   const lista = (CAMPOS[tipo] || CAMPOS.Desconhecido).slice();
+  if (/REGISTRO GERAL\s*-?\s*CPF/.test(sem(texto)) && !v.registroGeral) lista.splice(lista.indexOf("registroGeral"), 1); // CIN: o número é o CPF
   for (const k of ["validade", "sexo"]) if (v[k] && !lista.includes(k)) lista.splice(lista.indexOf("pai") < 0 ? lista.length : lista.indexOf("pai"), 0, k);
   const ficha = lista.map(k => {
     const val = v[k] || "";
