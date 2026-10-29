@@ -108,8 +108,30 @@ export const NOMES = {
 const DATA = /\b(\d{2})[\/.-](\d{2})[\/.-](\d{4})\b/;
 const pegaData = s => { const m = DATA.exec(s || ""); return m ? `${m[1]}/${m[2]}/${m[3]}` : ""; };
 
+// Dois rótulos lado a lado ("NATURALIDADE DATA DE NASCIMENTO" / "CAMPINAS-SP 02/07/1988"):
+// separa em duas colunas, usando a data para saber onde cortar.
+const DE_DATA = new Set(["nascimento", "expedicao", "validade", "primeiraHab", "registroData"]);
+function separarColunas(linhas){
+  const out = [];
+  for (let i = 0; i < linhas.length; i++){
+    const a = qualRotulo(sem(linhas[i])), b = a && a.resto ? qualRotulo(a.resto) : null;
+    const prox = linhas[i + 1];
+    if (a && b && !b.resto && prox && !qualRotulo(sem(prox))){
+      const d = DATA.exec(prox);
+      if (d && (DE_DATA.has(a.k) !== DE_DATA.has(b.k))){
+        const outro = so(prox.replace(d[0], ""));
+        const rotA = so(sem(linhas[i]).slice(0, sem(linhas[i]).length - a.resto.length));
+        if (DE_DATA.has(b.k)) out.push(rotA, outro, a.resto, d[0]); else out.push(rotA, d[0], a.resto, outro);
+        i++; continue;
+      }
+    }
+    out.push(linhas[i]);
+  }
+  return out;
+}
+
 export function lerDocumento(texto, conf){
-  const linhas = texto.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const linhas = separarColunas(texto.split(/\r?\n/).map(l => l.trim()).filter(Boolean));
   const tipo = tipoDoc(texto);
   const v = {}, motivo = {};
   const poe = (k, val, porque) => { if (val && !v[k]){ v[k] = val; if (porque) motivo[k] = porque; } };

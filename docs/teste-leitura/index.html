@@ -50,10 +50,19 @@ pre{white-space:pre-wrap;font-size:12px;background:var(--papel);border:1px solid
 <body>
 <main>
   <h1>Teste de leitura de documentos</h1>
-  <p class="sub">Yuh Extension · etapa 1. Escolha a foto de um RG, CNH ou certidão e veja o que o Google Vision consegue tirar dela.</p>
+  <p class="sub">Yuh Extension · etapa 1. Escolha a foto de um RG, CNH ou certidão e veja o que dá para tirar dela.</p>
 
-  <section class="cartao" id="cChave">
-    <h2>1. Chave do Google Cloud</h2>
+  <section class="cartao">
+    <h2>1. Leitor</h2>
+    <div class="linha">
+      <label class="botao"><input type="radio" name="motor" value="local" checked> No aparelho (grátis)</label>
+      <label class="botao"><input type="radio" name="motor" value="google"> Google Vision (precisa de chave)</label>
+    </div>
+    <p class="peq" id="motorDica"></p>
+  </section>
+
+  <section class="cartao" id="cChave" hidden>
+    <h2>Chave do Google Cloud</h2>
     <div id="semChave">
       <div class="linha"><input type="password" id="chave" placeholder="Cole aqui a chave (começa com AIza…)" autocomplete="off"><button class="principal" id="salvar">Guardar</button></div>
       <p class="peq">A chave fica guardada <b>só neste navegador</b>. Não vai para o GitHub nem para nenhum outro lugar além do Google.</p>
@@ -73,7 +82,7 @@ pre{white-space:pre-wrap;font-size:12px;background:var(--papel);border:1px solid
   <div id="saida"></div>
 
   <section class="cartao peq">
-    <b>Privacidade:</b> a foto vai direto deste navegador para o Google Cloud Vision, só para ler o texto. O Google diz que não usa essas imagens para treinar IA e não as guarda. Mesmo assim, avise o dono do documento. Esta página não salva nada: ao fechar, some.
+    <b>Privacidade:</b> com o leitor <b>no aparelho</b>, a foto não sai deste computador/celular. Com o <b>Google Vision</b>, a foto vai direto daqui para o Google, só para ler o texto (o Google diz que não usa para treinar IA e não guarda); nesse caso, avise o dono do documento. Esta página não salva nada: ao fechar, some.
   </section>
 </main>
 
@@ -89,6 +98,62 @@ function mostrarChave(){ const tem = !!ler(K); $("semChave").hidden = tem; $("co
 $("salvar").onclick = () => { const v = $("chave").value.trim(); if (!/^AIza[\w-]{20,}$/.test(v)) return alert("Essa chave não parece certa. Ela começa com AIza."); gravar(K, v); $("chave").value = ""; mostrarChave(); };
 $("esquecer").onclick = () => { gravar(K, null); mostrarChave(); };
 mostrarChave();
+
+const motor = () => document.querySelector('input[name="motor"]:checked').value;
+function mostrarMotor(){
+  const g = motor() === "google"; $("cChave").hidden = !g; $("conta").hidden = !g;
+  $("motorDica").textContent = g ? "Melhor qualidade. A foto vai para o Google." : "Lê aqui mesmo, sem internet depois da primeira vez. A primeira leitura baixa o leitor (~5 MB) e demora mais.";
+}
+document.querySelectorAll('input[name="motor"]').forEach(r => r.onchange = mostrarMotor);
+mostrarMotor();
+
+// ---------- leitor no aparelho (Tesseract, o mesmo do "Sugerir nome") ----------
+const ocrUrl = q => new URL("../../ocr/" + q, location.href).href;
+let worker = null;
+async function obterWorker(aviso){
+  if (worker) return worker;
+  if (!window.Tesseract){
+    aviso("Baixando o leitor (só na primeira vez)…");
+    await new Promise((ok, falha) => { const s = document.createElement("script"); s.src = ocrUrl("tesseract.min.js"); s.onload = ok; s.onerror = () => falha(new Error("O leitor não carregou (sem internet?)")); document.head.append(s); });
+  }
+  worker = await window.Tesseract.createWorker("por", 1, { workerPath: ocrUrl("worker.min.js"), corePath: ocrUrl("core"), langPath: ocrUrl("lang"), gzip: true, cacheMethod: "none", workerBlobURL: false });
+  return worker;
+}
+// cinza + contraste esticado, e tamanho bom para o leitor
+async function prepararLocal(arquivo, giro){
+  const bmp = await createImageBitmap(arquivo);
+  const k = Math.min(2, 2200 / Math.max(bmp.width, bmp.height));
+  const w = Math.round(bmp.width * k), h = Math.round(bmp.height * k);
+  const c = document.createElement("canvas"), g = c.getContext("2d");
+  if (giro % 180){ c.width = h; c.height = w; } else { c.width = w; c.height = h; }
+  g.translate(c.width / 2, c.height / 2); g.rotate(giro * Math.PI / 180); g.drawImage(bmp, -w / 2, -h / 2, w, h); bmp.close?.();
+  const im = g.getImageData(0, 0, c.width, c.height), d = im.data, hist = new Uint32Array(256);
+  for (let i = 0; i < d.length; i += 4){ const y = (d[i] * 299 + d[i + 1] * 587 + d[i + 2] * 114) / 1000 | 0; d[i] = y; hist[y]++; }
+  const tot = d.length / 4; let lo = 0, hi = 255, a = 0;
+  while (lo < 255 && (a += hist[lo]) < tot * 0.01) lo++; a = 0;
+  while (hi > 0 && (a += hist[hi]) < tot * 0.01) hi--;
+  const esc2 = 255 / Math.max(1, hi - lo);
+  for (let i = 0; i < d.length; i += 4){ const v = Math.max(0, Math.min(255, (d[i] - lo) * esc2)); d[i] = d[i + 1] = d[i + 2] = v; }
+  g.setTransform(1, 0, 0, 1, 0, 0); g.putImageData(im, 0, 0);
+  return c;
+}
+async function lerLocal(arquivo, aviso){
+  const w = await obterWorker(aviso);
+  let melhor = null;
+  for (const giro of [0, 90, 270, 180]){ // foto de lado: tenta girar e fica com a leitura mais confiante
+    aviso(giro ? `Tentando a foto girada (${giro}°)…` : "Lendo…");
+    const c = await prepararLocal(arquivo, giro);
+    const { data } = await w.recognize(c, {}, { blocks: true, text: true });
+    c.width = c.height = 0;
+    const palavras = []; for (const b of data.blocks || []) for (const p of b.paragraphs || []) for (const l of p.lines || []) for (const x of l.words || []) if (x.text.trim()) palavras.push(x);
+    const boas = palavras.filter(x => x.confidence >= 60 && /[\p{L}\d]{2}/u.test(x.text)).length;
+    if (!melhor || boas > melhor.boas) melhor = { boas, data, palavras, giro };
+    if (boas >= 25 && melhor.giro === giro) break; // já leu bem, não precisa girar
+  }
+  const conf = new Map();
+  for (const x of melhor.palavras){ const t = x.text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z0-9]/g, ""); if (t) conf.set(t, Math.min(conf.get(t) ?? 1, x.confidence / 100)); }
+  return { text: melhor.data.text || "", conf };
+}
 
 // contador do mês (o Google dá 1000 páginas grátis por mês)
 const mes = () => new Date().toISOString().slice(0, 7);
@@ -132,21 +197,31 @@ function explicar(e, st){
 
 $("arq").onchange = async () => {
   const fs = [...$("arq").files]; $("arq").value = ""; if (!fs.length) return;
-  if (!ler(K)) return alert("Primeiro guarde a chave do Google (passo 1).");
+  const local = motor() === "local";
+  if (!local && !ler(K)) return alert("Primeiro guarde a chave do Google.");
   const box = document.createElement("section"); box.className = "cartao";
   box.innerHTML = `<div class="lendo"><span class="giro"></span>Lendo ${fs.length > 1 ? fs.length + " fotos" : "a foto"}…</div>`;
   $("saida").prepend(box);
   const t0 = performance.now();
   try {
     const urls = await Promise.all(fs.map(preparar));
-    const fts = await Promise.all(urls.map(u => vision(u.split(",")[1])));
-    conta(fts.length);
-    const texto = fts.map(f => f.text || "").join("\n");
-    const conf = new Map(); for (const f of fts) for (const [k, v] of confiancas(f)) conf.set(k, Math.min(conf.get(k) ?? 1, v));
+    let texto, conf = new Map();
+    if (local){
+      const aviso = t => { const e = box.querySelector(".lendo span:last-child"); if (e) e.textContent = t; };
+      box.innerHTML = `<div class="lendo"><span class="giro"></span><span>Lendo…</span></div>`;
+      const partes = [];
+      for (let i = 0; i < fs.length; i++){ const r = await lerLocal(fs[i], t => aviso((fs.length > 1 ? `Foto ${i + 1} de ${fs.length}: ` : "") + t)); partes.push(r.text); for (const [k, v] of r.conf) conf.set(k, Math.min(conf.get(k) ?? 1, v)); }
+      texto = partes.join("\n");
+    } else {
+      const fts = await Promise.all(urls.map(u => vision(u.split(",")[1])));
+      conta(fts.length);
+      texto = fts.map(f => f.text || "").join("\n");
+      for (const f of fts) for (const [k, v] of confiancas(f)) conf.set(k, Math.min(conf.get(k) ?? 1, v));
+    }
     const { tipo, ficha } = lerDocumento(texto, conf);
     const seg = ((performance.now() - t0) / 1000).toFixed(1);
     const n = s => ficha.filter(f => f.situacao === s).length;
-    box.innerHTML = `<h2>${esc(fs.map(f => f.name).join(" + "))}<span class="tipo">${esc(tipo)}</span></h2>
+    box.innerHTML = `<h2>${esc(fs.map(f => f.name).join(" + "))}<span class="tipo">${esc(tipo)}</span><span class="tipo">${local ? "no aparelho" : "Google"}</span></h2>
       <p class="peq">Lido em ${seg} s · ${n("ok")} certos, ${n("duvida")} para conferir, ${n("falta")} não achados</p>
       <div class="res">
         <div class="fotos">${urls.map(u => `<img src="${u}" alt="">`).join("")}</div>
