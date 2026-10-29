@@ -147,7 +147,12 @@ function normalizarLinhas(linhas){
     // vários rótulos: separa o valor da linha de baixo
     const prox = linhas[i + 1], ehRot = prox && achaRotulos(prox);
     if (a.resto || !prox || ehRot){ for (const r of a.lista) out.push(r.rot); continue; }
-    let v = bordas(prox), vS = sem(v); const vals = {}, texto = [];
+    let usou = 1, v = bordas(prox);
+    const precisa = a.lista.filter(r => DE_DATA.has(r.k) || FORMATO[r.k]);
+    const cabe = t => precisa.every(r => (DE_DATA.has(r.k) ? DATA : FORMATO[r.k]).test(sem(t)));
+    const prox2 = linhas[i + 2];
+    if (!cabe(v) && prox2 && !achaRotulos(prox2) && cabe(v + " " + bordas(prox2))){ v = v + " " + bordas(prox2); usou = 2; }
+    let vS = sem(v); const vals = {}, texto = [];
     for (const r of a.lista){
       const re = DE_DATA.has(r.k) ? DATA : FORMATO[r.k];
       if (!re){ texto.push(r); continue; }
@@ -157,9 +162,19 @@ function normalizarLinhas(linhas){
     if (texto.length === 1) vals[texto[0].k] = bordas(v.split("").map((c, k) => vS[k] === " " && c !== " " ? " " : c).join(""));
     if (texto.length > 1){ for (const r of a.lista) out.push(r.rot); continue; }
     for (const r of a.lista){ out.push(r.rot); if (vals[r.k]) out.push(vals[r.k]); }
-    i++;
+    i += usou;
   }
   return out;
+}
+// palpite de gênero pelo primeiro nome (para a filiação sem "pai"/"mãe" escrito)
+const FEM = new Set(["RAQUEL", "ISABEL", "MABEL", "RUTH", "RUTE", "ESTER", "ESTHER", "BEATRIZ", "LUZ", "INES", "CARMEN", "MIRIAM", "LILIAN", "VIVIAN", "SUELI", "NELI", "ARACI", "IRACI", "DENISE", "ALICE", "CLARICE", "JANETE", "IVETE", "ELIANE", "LUCIANE", "CRISTIANE", "SIMONE", "MICHELE", "JAQUELINE", "ADRIANE", "ROSE", "IRENE", "JOSE MARIA"]);
+const MASC = new Set(["LUCA", "LUCCA", "JOSUA", "JOSHUA", "NIKITA", "ANDREA", "BATISTA", "ISAIA", "JEREMIAS", "MOISES", "JONAS", "ELIAS", "TOBIAS", "LUCAS", "MATIAS", "MESSIAS", "NICOLAS"]);
+function generoNome(nome){
+  const p = sem(nome || "").split(" ")[0]; if (!p) return "";
+  if (FEM.has(p)) return "F"; if (MASC.has(p)) return "M";
+  if (/A$/.test(p)) return "F";
+  if (/(O|OS|ON|EL|IO|ER|OR|UR|IR|AN|EN|IN|SON|TON)$/.test(p)) return "M";
+  return "";
 }
 // nome no meio de sujeira: "= ASSNENHES — ENILTON NEVES DE MOURA ido A" → "ENILTON NEVES DE MOURA"
 function limparNome(v){
@@ -183,7 +198,13 @@ export function lerDocumento(texto, conf){
     const [a, b] = depoisDe(linhas, i, 2);
     switch (r.k){
       case "nome": poe("nome", a && !/\d{3}/.test(a) ? limparNome(a) : ""); break;
-      case "filiacao": { const x = limparNome(a), y = limparNome(b); if (x) poe("pai", x, "confira: a ordem pai/mãe não vem escrita"); if (y) poe("mae", y, "confira: a ordem pai/mãe não vem escrita"); break; }
+      case "filiacao": {
+        let x = limparNome(a), y = limparNome(b), porque = "confira: a ordem pai/mãe não vem escrita";
+        const gx = generoNome(x), gy = generoNome(y);
+        if (gx === "F" && gy !== "F" || gy === "M" && gx !== "M"){ [x, y] = [y, x]; porque = "confira: separei pai e mãe pelo nome"; }
+        else if (gx === "M" || gy === "F") porque = "confira: separei pai e mãe pelo nome";
+        if (x) poe("pai", x, porque); if (y) poe("mae", y, porque); break;
+      }
       case "pai": poe("pai", limparNome(a)); break;
       case "mae": poe("mae", limparNome(a)); break;
       case "nascimento": {
