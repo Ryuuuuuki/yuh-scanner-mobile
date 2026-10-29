@@ -42,7 +42,7 @@ const ROT = {
   mae: /^MAE\b/,
   nascimento: /^(DATA,? (DE |E LOCAL DE |LOCAL E UF DE )?NASCIMENTO|NASCIMENTO|DATA NASC)\b/,
   naturalidade: /^(NATURALIDADE|LOCAL DE NASCIMENTO|MUNICIPIO DE NASCIMENTO)\b/,
-  cpf: /^(CPF|N[OU°º]? ?CPF)\b/,
+  cpf: /^(REGISTRO GERAL\s*-?\s*CPF|CPF|N[OU°º]? ?CPF)\b/,
   registroGeral: /^(REGISTRO GERAL|R\.?G\.?|N[OU°º]? DO RG|REGISTRO)\b/,
   expedicao: /^(DATA (DE )?(EXPEDICAO|EMISSAO)|EXPEDICAO|EMISSAO)\b/,
   orgao: /^(ORGAO (EMISSOR|EXPEDIDOR)|ORG\.? EMISSOR)\b/,
@@ -54,23 +54,27 @@ const ROT = {
   matricula: /^MATRICULA\b/,
   registroData: /^(DATA DO REGISTRO|REGISTRADO EM)\b/,
   sexo: /^SEXO\b/,
+  nacionalidade: /^NACIONALIDADE\b/,
+  local: /^LOCAL\b/,
 };
 const tiraNumero = s => s.replace(/^\s*(\d{1,2}[A-D]?|[A-D])[\s.)-]+(?=\D)/, "");
 function qualRotulo(linhaSem){
   const l = tiraNumero(linhaSem);
-  for (const [k, re] of Object.entries(ROT)){ const m = re.exec(l); if (m) return { k, resto: so(l.slice(m[0].length).replace(/^[\s:./-]+/, "")) }; }
+  for (const [k, re] of Object.entries(ROT)){ const m = re.exec(l); if (m) return { k, rot: m[0], resto: so(l.slice(m[0].length).replace(/^[\s:./-]+/, "")) }; }
   return null;
 }
+
+const bordas = v => so(v.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N})]+$/gu, ""));
 
 // valor de um rótulo: o resto da linha, ou as próximas linhas que não são rótulos
 function depoisDe(linhas, i, quantas = 1){
   const rS = qualRotulo(sem(linhas[i]));
   const original = linhas[i], corte = original.length - (rS ? rS.resto.length : 0);
-  const resto = rS && rS.resto ? so(original.slice(corte)) : "";
+  const resto = rS && rS.resto ? bordas(original.slice(corte)) : "";
   const vals = resto ? [resto] : [];
   for (let j = i + 1; j < linhas.length && vals.length < quantas; j++){
     if (qualRotulo(sem(linhas[j]))) break;
-    if (linhas[j].trim()) vals.push(so(linhas[j]));
+    const v = bordas(linhas[j]); if (v) vals.push(v);
   }
   return vals;
 }
@@ -108,30 +112,68 @@ export const NOMES = {
 const DATA = /\b(\d{2})[\/.-](\d{2})[\/.-](\d{4})\b/;
 const pegaData = s => { const m = DATA.exec(s || ""); return m ? `${m[1]}/${m[2]}/${m[3]}` : ""; };
 
-// Dois rótulos lado a lado ("NATURALIDADE DATA DE NASCIMENTO" / "CAMPINAS-SP 02/07/1988"):
-// separa em duas colunas, usando a data para saber onde cortar.
+// ---------- arrumar as linhas antes de ler ----------
+// • CIN (identidade nova): rótulos em português e inglês ("Nome / Name") → tira o inglês.
+// • Sujeira da foto no começo da linha ("“ES Nome", "| q. Data de…") → pula até 2 pedacinhos.
+// • Vários rótulos na mesma linha ("NATURALIDADE VALIDADE" / "GUARULHOS, SP 03/11/2035")
+//   → separa os valores pelo formato (data, CPF, sexo, país) e o que sobra vai para o rótulo de texto.
 const DE_DATA = new Set(["nascimento", "expedicao", "validade", "primeiraHab", "registroData"]);
-function separarColunas(linhas){
+const INGLES = /\s*\/\s*(SOCIAL NAME|GIVEN NAMES|SURNAME|NAME|PERSONAL NUMBER|DATE OF BIRTH|PLACE OF BIRTH|NATIONALITY|EXPIRY|SEX|FILIATION|CARD ISSUER SIGNATURE|CARD ISSUER|ISSUE|PLACE)\b/g;
+const CPF_RE = /(?<!\d)\d{3}[.\s]?\d{3}[.\s]?\d{3}[-\s.]?\d{2}(?!\d)/;
+const FORMATO = { cpf: CPF_RE, sexo: /\b(MASCULINO|FEMININO|M|F)\b(?!.*\b(M|F)\b)/, nacionalidade: /\b[A-Z]{3}\b(?!.*\b[A-Z]{3}\b)/, categoria: /\b(ACC|AB|AC|AD|AE|A|B|C|D|E)\b/ };
+function achaRotulos(linha){
+  let s = so(sem(linha).replace(INGLES, " ").replace(/[^A-Z0-9\/.,:ªº° -]/g, " "));
+  for (let pulos = 0; pulos <= 2; pulos++){
+    let r = qualRotulo(s);
+    if (r){
+      const lista = [r];
+      while (r.resto){ const n = qualRotulo(r.resto.replace(/^[-\s]+/, "")); if (!n) break; lista.push(n); r = n; }
+      return { lista, resto: r.resto };
+    }
+    const m = /^\S{1,2}\s+/.exec(s); if (!m) break; s = s.slice(m[0].length);
+  }
+  return null;
+}
+function normalizarLinhas(linhas){
   const out = [];
   for (let i = 0; i < linhas.length; i++){
-    const a = qualRotulo(sem(linhas[i])), b = a && a.resto ? qualRotulo(a.resto) : null;
-    const prox = linhas[i + 1];
-    if (a && b && !b.resto && prox && !qualRotulo(sem(prox))){
-      const d = DATA.exec(prox);
-      if (d && (DE_DATA.has(a.k) !== DE_DATA.has(b.k))){
-        const outro = so(prox.replace(d[0], ""));
-        const rotA = so(sem(linhas[i]).slice(0, sem(linhas[i]).length - a.resto.length));
-        if (DE_DATA.has(b.k)) out.push(rotA, outro, a.resto, d[0]); else out.push(rotA, d[0], a.resto, outro);
-        i++; continue;
-      }
+    const a = achaRotulos(linhas[i]);
+    if (!a){ out.push(linhas[i]); continue; }
+    if (a.lista.length === 1){
+      out.push(a.lista[0].rot);
+      if (a.resto && (a.resto.match(/[A-Z0-9]/g) || []).length >= 3){ const pal = so(linhas[i]).split(" "); out.push(bordas(pal.slice(-a.resto.split(" ").length).join(" "))); }
+      continue;
     }
-    out.push(linhas[i]);
+    // vários rótulos: separa o valor da linha de baixo
+    const prox = linhas[i + 1], ehRot = prox && achaRotulos(prox);
+    if (a.resto || !prox || ehRot){ for (const r of a.lista) out.push(r.rot); continue; }
+    let v = bordas(prox), vS = sem(v); const vals = {}, texto = [];
+    for (const r of a.lista){
+      const re = DE_DATA.has(r.k) ? DATA : FORMATO[r.k];
+      if (!re){ texto.push(r); continue; }
+      const m = re.exec(vS); if (!m) continue;
+      vals[r.k] = v.substr(m.index, m[0].length); vS = vS.slice(0, m.index) + " ".repeat(m[0].length) + vS.slice(m.index + m[0].length);
+    }
+    if (texto.length === 1) vals[texto[0].k] = bordas(v.split("").map((c, k) => vS[k] === " " && c !== " " ? " " : c).join(""));
+    if (texto.length > 1){ for (const r of a.lista) out.push(r.rot); continue; }
+    for (const r of a.lista){ out.push(r.rot); if (vals[r.k]) out.push(vals[r.k]); }
+    i++;
   }
   return out;
 }
+// nome no meio de sujeira: "= ASSNENHES — ENILTON NEVES DE MOURA ido A" → "ENILTON NEVES DE MOURA"
+function limparNome(v){
+  if (!v) return v;
+  const partes = v.split(/\s*[—–=|_]+\s*|\s-\s/).filter(Boolean);
+  let t = partes.sort((x, y) => (y.match(/\p{Lu}/gu) || []).length - (x.match(/\p{Lu}/gu) || []).length)[0].split(/\s+/);
+  const ruim = w => w.length <= 2 || !/^[\p{Lu}'.]+$/u.test(w);
+  while (t.length && ruim(t[0])) t.shift();
+  while (t.length && ruim(t[t.length - 1])) t.pop();
+  return t.length >= 2 ? t.join(" ") : "";
+}
 
 export function lerDocumento(texto, conf){
-  const linhas = separarColunas(texto.split(/\r?\n/).map(l => l.trim()).filter(Boolean));
+  const linhas = normalizarLinhas(texto.split(/\r?\n/).map(l => l.trim()).filter(Boolean));
   const tipo = tipoDoc(texto);
   const v = {}, motivo = {};
   const poe = (k, val, porque) => { if (val && !v[k]){ v[k] = val; if (porque) motivo[k] = porque; } };
@@ -140,10 +182,10 @@ export function lerDocumento(texto, conf){
     const r = qualRotulo(sem(l)); if (!r) return;
     const [a, b] = depoisDe(linhas, i, 2);
     switch (r.k){
-      case "nome": poe("nome", a && !/\d{3}/.test(a) ? a : ""); break;
-      case "filiacao": if (a) poe("pai", a); if (b) poe("mae", b); break;
-      case "pai": poe("pai", a); break;
-      case "mae": poe("mae", a); break;
+      case "nome": poe("nome", a && !/\d{3}/.test(a) ? limparNome(a) : ""); break;
+      case "filiacao": { const x = limparNome(a), y = limparNome(b); if (x) poe("pai", x, "confira: a ordem pai/mãe não vem escrita"); if (y) poe("mae", y, "confira: a ordem pai/mãe não vem escrita"); break; }
+      case "pai": poe("pai", limparNome(a)); break;
+      case "mae": poe("mae", limparNome(a)); break;
       case "nascimento": {
         const d = pegaData(a) || pegaData(b); poe("nascimento", d);
         // CNH nova: "3 DATA, LOCAL E UF DE NASCIMENTO" → "01/02/1980, SÃO PAULO, SP"
@@ -185,14 +227,19 @@ export function lerDocumento(texto, conf){
   if (tipo === "RG" && !v.orgao && /SECRETARIA (DA|DE) (ESTADO DA )?SEGURANCA PUBLICA/.test(sem(texto))){
     const uf = ufDoTexto(texto); if (uf){ v.orgao = `SSP/${uf}`; motivo.orgao = "deduzido de “Secretaria da Segurança Pública”"; }
   }
-  // datas sem rótulo: a mais antiga costuma ser o nascimento
+  // "… Emissão / Issue …" no meio da linha (verso da CIN): a data vem nela ou na de baixo
+  if (!v.expedicao) linhas.forEach((l, i) => { if (!v.expedicao && /EMISSAO|EXPEDICAO/.test(sem(l))){ const d = pegaData(l) || pegaData(linhas[i + 1]); if (d){ v.expedicao = d; motivo.expedicao = "achei perto de “Emissão”"; } } });
+  // datas sem rótulo: a mais antiga (que não seja de outro campo) costuma ser o nascimento
   if (!v.nascimento){
-    const ds = [...texto.matchAll(new RegExp(DATA, "g"))].map(m => `${m[1]}/${m[2]}/${m[3]}`).filter(dataValida);
+    const usadas = new Set([v.expedicao, v.validade, v.primeiraHab, v.registroData].filter(Boolean));
+    const ds = [...texto.matchAll(new RegExp(DATA, "g"))].map(m => `${m[1]}/${m[2]}/${m[3]}`).filter(d => dataValida(d) && !usadas.has(d));
     if (ds.length){ ds.sort((x, y) => x.split("/").reverse().join("").localeCompare(y.split("/").reverse().join(""))); v.nascimento = ds[0]; motivo.nascimento = "achei a data, mas sem o rótulo do lado"; }
   }
 
   // ficha final com situação de cada campo: ok (verde), duvida (amarelo), falta (cinza)
-  const ficha = (CAMPOS[tipo] || CAMPOS.Desconhecido).map(k => {
+  const lista = (CAMPOS[tipo] || CAMPOS.Desconhecido).slice();
+  for (const k of ["validade", "sexo"]) if (v[k] && !lista.includes(k)) lista.splice(lista.indexOf("pai") < 0 ? lista.length : lista.indexOf("pai"), 0, k);
+  const ficha = lista.map(k => {
     const val = v[k] || "";
     let sit = val ? "ok" : "falta", porque = motivo[k] || "";
     if (val){

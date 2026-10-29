@@ -228,7 +228,7 @@ $("arq").onchange = async () => {
         <div>
           <div class="legenda"><span><i style="background:var(--livre)"></i>lido com segurança</span><span><i style="background:var(--ocupado)"></i>conferir</span><span><i style="background:var(--linha)"></i>não achou</span></div>
           ${ficha.map(f => `<div class="campo s-${f.situacao}"><span>${esc(f.rotulo)}</span><b>${f.valor ? esc(f.valor) : "não encontrado"}${f.porque ? `<small>${esc(f.porque)}</small>` : ""}</b></div>`).join("")}
-          <details><summary>Ver o texto que o Google leu</summary><pre>${esc(texto) || "(nenhum texto)"}</pre></details>
+          <details><summary>Ver o texto lido</summary><pre>${esc(texto) || "(nenhum texto)"}</pre></details>
           <details><summary>Copiar para me mandar (sem a foto)</summary><p class="peq">Se algum campo veio errado, me mande este texto. <b>Troque nomes e números reais</b> antes, se o documento não for seu.</p><pre>${esc(JSON.stringify({ tipo, ficha: ficha.map(f => [f.rotulo, f.valor, f.situacao]), texto }, null, 1))}</pre></details>
         </div>
       </div>`;
