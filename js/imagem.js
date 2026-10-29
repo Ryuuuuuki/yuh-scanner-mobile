@@ -4,6 +4,10 @@
 export const LADO_FOTO = 3000;   // maior lado guardado da foto original
 export const LADO_PAGINA = 2200; // maior lado da página pronta (~190 dpi numa A4)
 
+// O iPhone tem um limite baixo de memória para imagens (canvas) e só devolve a memória
+// tarde; zerar o tamanho libera na hora. Use quando a imagem não for mais necessária.
+export function liberar(...cs){ for (const c of cs) if (c instanceof HTMLCanvasElement){ c.width = 0; c.height = 0; } }
+
 export function novoCanvas(w, h){
   const c = document.createElement("canvas");
   c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h));
@@ -103,7 +107,9 @@ function fundoEstimado(c){
   d.data.set(o); g.putImageData(d, 0, 0);
   const f = novoCanvas(c.width, c.height), fg = f.getContext("2d", { willReadFrequently: true });
   fg.imageSmoothingQuality = "high"; fg.drawImage(p, 0, 0, c.width, c.height);
-  return fg.getImageData(0, 0, c.width, c.height).data;
+  const dados = fg.getImageData(0, 0, c.width, c.height).data;
+  liberar(p, f);
+  return dados;
 }
 export function aplicarFiltro(src, filtro){
   const c = novoCanvas(src.width, src.height), g = c.getContext("2d", { willReadFrequently: true });

@@ -11,10 +11,11 @@ Projeto do Iuri (GitHub `Ryuuuuuki`). Conversa em português, informal, explica�
 - Pasta de trabalho do Iuri no PC pessoal: `C:\Users\iurip\Documents\YuhScanner Mobile`.
 
 ## Testes
+Scripts em `testes/` (ver `testes/README.md`). Compatibilidade mínima pensada: **iOS 15+** e **Chrome/Android 87+** (Samsung Internet 14+). Sintaxe até ES2020.
 Playwright (Chromium) com câmera falsa: `--use-fake-device-for-media-stream --use-file-for-fake-video-capture=<arquivo.y4m>` (vídeo de uma folha sobre a mesa) e perfis `Pixel 7` / `iPhone 13`. WebKit não está instalado no ambiente: o Safari real só é testado no iPhone do Iuri. Para nomes com acento no download, rodar com `LANG=C.UTF-8`.
 
 ## Versões
-- 1.0.0 app; 1.0.1 foto com um toque (quadro do vídeo, câmera fica ligada nas bordas); 1.1.0 vários arquivos (salvar separado) + Sugerir nome; 1.1.1 sem `viewport-fit=cover` (no Android novo o app ficava por baixo da barra de navegação: o Chrome não informa a área segura).
+- 1.0.0 app; 1.0.1 foto com um toque (quadro do vídeo, câmera fica ligada nas bordas); 1.1.0 vários arquivos (salvar separado) + Sugerir nome; 1.1.1 sem `viewport-fit=cover` (no Android novo o app ficava por baixo da barra de navegação: o Chrome não informa a área segura); 1.1.2 compatibilidade: `100vh` antes de `100dvh` (Chrome < 108 / iOS < 15.4 abriam em branco), sem `inset` (iOS 14), memória de imagens liberada na hora (limite do iPhone), plano B do Enviar (NotAllowedError), aviso em aba anônima, moldura de celular só no computador, layout compacto em tela baixa.
 
 ## Pendências
 - Testar no iPhone e Android de verdade (câmera, flash, Auto, compartilhar).

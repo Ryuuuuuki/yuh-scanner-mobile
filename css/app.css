@@ -28,12 +28,12 @@ button{cursor:pointer}
 :focus-visible{outline:2px solid var(--caneta);outline-offset:2px}
 
 /* o "celular": tela cheia no celular, moldura no computador */
-.celular{position:relative;width:100%;height:100dvh;margin:0 auto;background:var(--mesa);overflow:hidden;display:flex;flex-direction:column}
-@media (min-width:600px){
+.celular{position:relative;width:100%;height:100vh;height:100dvh;margin:0 auto;background:var(--mesa);overflow:hidden;display:flex;flex-direction:column}
+@media (min-width:600px) and (hover:hover) and (pointer:fine){
   body{display:grid;place-items:center;background:radial-gradient(circle at 30% 20%,#2a3445,#0d1117)}
-  .celular{width:390px;height:min(844px,calc(100dvh - 40px));border-radius:42px;border:10px solid #000;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+  .celular{width:390px;height:min(844px,calc(100vh - 40px));height:min(844px,calc(100dvh - 40px));border-radius:42px;border:10px solid #000;box-shadow:0 30px 80px rgba(0,0,0,.6)}
 }
-.tela{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--mesa)}
+.tela{position:absolute;top:0;right:0;bottom:0;left:0;display:flex;flex-direction:column;background:var(--mesa)}
 
 /* barra de cima */
 .barra{display:flex;align-items:center;gap:6px;padding:calc(10px + env(safe-area-inset-top)) 10px 10px;background:var(--painel);border-bottom:1px solid var(--linha);min-height:58px}
@@ -65,7 +65,7 @@ button{cursor:pointer}
 .camera{background:#000;color:#fff}
 .visor{position:relative;flex:1;overflow:hidden;display:grid;place-items:center}
 .visor video,.visor canvas.cena{width:100%;height:100%;object-fit:cover;display:block}
-.visor svg.contorno{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.visor svg.contorno{position:absolute;top:0;right:0;bottom:0;left:0;width:100%;height:100%;pointer-events:none}
 .contorno polygon{fill:rgba(127,162,255,.18);stroke:#7FA2FF;stroke-width:3;stroke-linejoin:round;animation:pulsa 1.4s ease-in-out infinite}
 @keyframes pulsa{50%{fill:rgba(127,162,255,.32)}}
 @media (prefers-reduced-motion:reduce){.contorno polygon{animation:none}}
@@ -83,7 +83,7 @@ button{cursor:pointer}
 .pilha img{width:100%;height:100%;object-fit:cover;border-radius:6px;border:2px solid #fff;background:#333}
 .pilha span{position:absolute;top:-8px;right:-8px;min-width:24px;height:24px;border-radius:999px;background:var(--caneta);color:var(--sobre-caneta);font-size:13px;font-weight:700;display:grid;place-items:center;padding:0 6px}
 .galeria{justify-self:end;display:flex;flex-direction:column;align-items:center;gap:2px;border:0;background:none;color:#fff;font-size:12px}
-.flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:3}
+.flash{position:absolute;top:0;right:0;bottom:0;left:0;background:#fff;opacity:0;pointer-events:none;z-index:3}
 .flash.on{animation:flash .25s}
 @keyframes flash{0%{opacity:.8}100%{opacity:0}}
 
@@ -93,7 +93,7 @@ button{cursor:pointer}
 .palco{position:relative;flex:1;display:grid;place-items:center;padding:24px;overflow:hidden;touch-action:none}
 .palco .quadro{position:relative}
 .palco canvas{display:block;max-width:100%;max-height:100%}
-.palco svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.palco svg{position:absolute;top:0;right:0;bottom:0;left:0;width:100%;height:100%;overflow:visible;pointer-events:none}
 .palco svg polygon{fill:rgba(127,162,255,.15);stroke:#7FA2FF;stroke-width:2.5}
 .alca{position:absolute;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;touch-action:none;display:grid;place-items:center;cursor:grab}
 .alca i{width:22px;height:22px;border-radius:50%;background:#fff;border:3px solid #7FA2FF;box-shadow:0 2px 6px rgba(0,0,0,.5)}
@@ -137,7 +137,7 @@ button{cursor:pointer}
 .dica-g{text-align:center;color:var(--tinta-2);font-size:13px;padding:0 14px 8px}
 
 /* ---------- folha de baixo (salvar / menus) ---------- */
-.veu{position:absolute;inset:0;background:rgba(10,15,25,.5);z-index:20;display:flex;align-items:flex-end;opacity:0;transition:opacity .2s}
+.veu{position:absolute;top:0;right:0;bottom:0;left:0;background:rgba(10,15,25,.5);z-index:20;display:flex;align-items:flex-end;opacity:0;transition:opacity .2s}
 .veu.on{opacity:1}
 .folha-baixo{width:100%;background:var(--painel);border-radius:22px 22px 0 0;padding:10px 18px calc(18px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:14px;transform:translateY(100%);transition:transform .25s ease;max-height:90%;overflow-y:auto}
 .veu.on .folha-baixo{transform:none}
@@ -145,6 +145,7 @@ button{cursor:pointer}
 .puxador{width:40px;height:5px;border-radius:999px;background:var(--linha);margin:0 auto 4px}
 .folha-baixo h3{margin:0;font-size:19px;overflow-wrap:anywhere}
 .folha-baixo .btn{flex:none;width:100%}
+.folha-baixo > *{flex-shrink:0} /* em tela pequena rola, não esmaga */
 .folha-baixo p{margin:0;color:var(--tinta-2);font-size:14px}
 .campo{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--tinta-2)}
 .campo .linha{display:flex;align-items:center;border:1px solid var(--linha);border-radius:12px;background:var(--papel);overflow:hidden;height:50px}
@@ -164,7 +165,7 @@ button{cursor:pointer}
 /* aviso */
 .aviso{position:absolute;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translate(-50%,16px);background:var(--tinta);color:var(--painel);padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;transition:.2s;z-index:40;max-width:90%;text-align:center}
 .aviso.on{opacity:1;transform:translate(-50%,0)}
-.processando{position:absolute;inset:0;background:rgba(10,15,25,.55);z-index:30;display:grid;place-items:center;color:#fff;font-weight:700}
+.processando{position:absolute;top:0;right:0;bottom:0;left:0;background:rgba(10,15,25,.55);z-index:30;display:grid;place-items:center;color:#fff;font-weight:700}
 .processando div{display:flex;flex-direction:column;align-items:center;gap:12px}
 .roda{width:40px;height:40px;border-radius:50%;border:4px solid rgba(255,255,255,.25);border-top-color:#fff;animation:gira .8s linear infinite}
 @keyframes gira{to{transform:rotate(360deg)}}
@@ -179,13 +180,13 @@ button{cursor:pointer}
 .instalar .acao-i{margin-left:auto;border:0;border-radius:999px;background:var(--caneta);color:var(--sobre-caneta);font-weight:700;height:36px;padding:0 14px;flex:none}
 .versao{color:var(--tinta-2);font-size:12px;text-align:center;padding:10px 0 0}
 .doc .mais{width:40px;height:40px;display:grid;place-items:center;border-radius:10px;color:var(--tinta-2);flex:none}
-.cam-erro{position:absolute;inset:0;display:grid;place-items:center;padding:30px;text-align:center;color:#cfd6df;z-index:1}
+.cam-erro{position:absolute;top:0;right:0;bottom:0;left:0;display:grid;place-items:center;padding:30px;text-align:center;color:#cfd6df;z-index:1}
 .cam-erro b{display:block;color:#fff;font-size:18px;margin-bottom:8px}
 .cam-erro .btn{margin-top:16px;max-width:260px}
 .slide .carregando{width:60%;aspect-ratio:210/297;background:rgba(255,255,255,.5);border-radius:2px}
 .aviso button{margin-left:10px;border:0;background:rgba(255,255,255,.18);color:inherit;border-radius:8px;padding:4px 10px;font-weight:700}
 .aviso.acao{pointer-events:auto}
-@media (min-width:600px){.celular{height:min(844px,calc(100dvh - 40px))}}
+@media (min-width:600px) and (hover:hover) and (pointer:fine){.celular{height:min(844px,calc(100vh - 40px));height:min(844px,calc(100dvh - 40px))}}
 
 /* ---------- vários arquivos ---------- */
 .escolha{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -235,9 +236,29 @@ button{cursor:pointer}
 .resumo .alerta{color:var(--carimbo);font-weight:700}
 .linha-btn{display:flex;gap:10px}
 .linha-btn .btn:first-child{flex:0 0 38%}
-.zoom{position:absolute;inset:0;z-index:25;background:#0b0f14;display:flex;flex-direction:column}
+.zoom{position:absolute;top:0;right:0;bottom:0;left:0;z-index:25;background:#0b0f14;display:flex;flex-direction:column}
 .barra.escura{background:#0b0f14;border-color:#222}
 .z-img{flex:1;display:grid;place-items:center;padding:16px;min-height:0}
 .z-img img{max-width:100%;max-height:100%;background:#fff}
 .cartao .carregando{width:62px;height:86px;border-radius:4px;background:var(--mesa)}
 .sug .erro-ler{font-size:13px;color:var(--carimbo);flex:none}
+
+/* ---------- celulares mais antigos ----------
+   iOS 14.0–14.4 não tem "gap" em flexbox: um espaçamento mínimo para nada grudar */
+@supports not (aspect-ratio:1){
+  .vazio .folha{height:170px}
+  .slide .carregando{height:60vw}
+  .ferramentas .ferr,.linha-btn .btn,.bordas-base .btn{margin:0 3px}
+}
+
+/* telas baixas (iPhone SE antigo, celulares pequenos): tudo mais compacto */
+@media (max-height:620px){
+  .folha-baixo{gap:10px;padding-top:6px}
+  .escolha button{padding:8px 6px;gap:3px}
+  .escolha svg{width:24px;height:24px}
+  .escolha small{display:none}
+  .btn{height:46px}
+  .campo .linha{height:44px}
+  .seg button{height:40px}
+  .fab{height:54px;bottom:16px}
+}

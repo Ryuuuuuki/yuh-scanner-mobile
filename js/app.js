@@ -1,11 +1,11 @@
 // Yuh Scanner Mobile — interface e fluxo do app.
-import { endireitar, aplicarFiltro, girar, reduzir, miniatura, paraJpeg, carregarImagem, novoCanvas, deformar, LADO_FOTO } from "./imagem.js";
+import { endireitar, aplicarFiltro, girar, reduzir, miniatura, paraJpeg, carregarImagem, novoCanvas, liberar, LADO_FOTO } from "./imagem.js";
 import { acharFolha, cantosPadrao, movimento } from "./bordas.js";
 import * as banco from "./banco.js";
 import { montarPdf } from "./pdf.js";
 import { sugestoesDeNome } from "./ocr.js";
 
-export const VERSAO = "1.1.1";
+export const VERSAO = "1.1.2";
 const $ = id => document.getElementById(id);
 const celular = $("celular");
 const FILTROS = [["realcado", "Realçado"], ["original", "Original"], ["cinza", "Cinza"], ["pb", "P&B"]];
@@ -51,22 +51,28 @@ async function comEspera(t, fn){
 }
 
 /* ================= processar uma página ================= */
+// a foto grande já está no banco: tira da memória (as páginas endireitadas ficam no cache)
+function liberarFoto(p){ if (p._foto){ for (const [k, v] of retaCache) if (v === p._foto) retaCache.delete(k); liberar(p._foto); delete p._foto; } }
 const chavePagina = p => JSON.stringify([p.cantos.map(c => [Math.round(c.x), Math.round(c.y)]), p.filtro, p.rot]);
 async function fotoDe(p){ if (p._foto) return p._foto; const b = await banco.lerFoto(p.pid); if (!b) throw new Error("foto da página não encontrada"); return carregarImagem(b); }
 async function retaDe(p){
   const k = p.pid + JSON.stringify(p.cantos);
   if (retaCache.has(k)) return retaCache.get(k);
-  const r = endireitar(await fotoDe(p), p.cantos);
-  retaCache.set(k, r); if (retaCache.size > 2) retaCache.delete(retaCache.keys().next().value);
+  const foto = await fotoDe(p), r = endireitar(foto, p.cantos);
+  if (foto !== p._foto) liberar(foto);
+  retaCache.set(k, r);
+  if (retaCache.size > 2){ const velha = retaCache.keys().next().value; liberar(retaCache.get(velha)); retaCache.delete(velha); }
   return r;
 }
 // gera a página pronta (endireitada + filtro + giro), guarda no banco e atualiza a imagem da tela
 async function processar(p){
   const reta = await retaDe(p);
-  const pronta = girar(aplicarFiltro(reta, p.filtro), p.rot);
+  const filtrada = aplicarFiltro(reta, p.filtro), pronta = girar(filtrada, p.rot);
+  if (pronta !== filtrada) liberar(filtrada);
   const blob = await paraJpeg(pronta, .9);
-  await banco.guardarPronta(p.pid, chavePagina(p), blob);
   p.mini = miniatura(pronta); p.w = pronta.width; p.h = pronta.height;
+  liberar(pronta);
+  await banco.guardarPronta(p.pid, chavePagina(p), blob);
   if (p.url) URL.revokeObjectURL(p.url);
   p.url = URL.createObjectURL(blob);
   p.previas = null;
@@ -197,7 +203,7 @@ async function fotosDaGaleria(arqs){
       const foto = reduzir(await carregarImagem(f), LADO_FOTO), q = acharFolha(foto);
       const p = { pid: novoId(), _foto: foto, cantos: q || cantosPadrao(foto.width, foto.height), filtro: "realcado", rot: 0 };
       await banco.guardarFoto(p.pid, await paraJpeg(foto, .92));
-      await processar(p); delete p._foto;
+      await processar(p); liberarFoto(p);
       return p;
     });
     if (p) novas.push(p);
@@ -278,7 +284,7 @@ async function confirmarBordaNova(){
     return true;
   });
   if (!ok) return false;
-  delete p._foto; delete p.achou;
+  liberarFoto(p); delete p.achou;
   if (refazendo){ // "Refazer": troca a foto da página, mantém o lugar
     const velho = refazendo; refazendo = null;
     const i = docAtual.paginas.indexOf(velho);
@@ -300,10 +306,12 @@ $("bordMais").onclick = async () => {
 $("bordConcluir").onclick = async () => { if (await confirmarBordaNova() === true) concluirCaptura(); };
 $("bordRefazer").onclick = () => { ir("tCamera"); abrirCameraDeNovo(false); };
 $("bordVoltar").onclick = () => { if (editandoBordas) abrirDoc(docAtual, docAtual.paginas.indexOf(editandoBordas)); else { ir("tCamera"); abrirCameraDeNovo(); } };
-$("bordCancelar").onclick = () => abrirDoc(docAtual, docAtual.paginas.indexOf(editandoBordas));
+$("bordCancelar").onclick = () => { liberar(bordasPag?._foto); abrirDoc(docAtual, docAtual.paginas.indexOf(editandoBordas)); };
 $("bordAplicar").onclick = async () => {
   const p = editandoBordas; p.cantos = bordasPag.cantos;
+  p._foto = bordasPag._foto;              // reaproveita a foto já aberta
   await comEspera("Endireitando…", () => processar(p));
+  liberarFoto(p);
   await banco.salvarDoc(docAtual);
   abrirDoc(docAtual, docAtual.paginas.indexOf(p)); avisar("Bordas ajustadas");
 };
@@ -325,6 +333,10 @@ async function abrirCameraDeNovo(desarmado = true){
 async function concluirCaptura(){
   pararCamera();
   if (!novas.length){ ir(camDe); return; }
+  try { await concluirCaptura2(); }
+  catch (e) { console.error(e); avisar("Não consegui guardar o documento: " + (e.message || e)); ir("tInicio"); desenharInicio(); }
+}
+async function concluirCaptura2(){
   if (docAlvo){
     docAlvo.paginas.push(...novas);
     await banco.salvarDoc(docAlvo);
@@ -403,7 +415,11 @@ async function desenharFiltros(){
       const peq = reduzir(foto, 700), k = peq.width / foto.width;
       const reta = endireitar(peq, p.cantos.map(c => ({ x: c.x * k, y: c.y * k })));
       const base = reduzir(reta, 160), prev = {};
-      for (const [f] of FILTROS) prev[f] = miniatura(girar(aplicarFiltro(base, f), p.rot), 112);
+      for (const [f] of FILTROS){ const a = aplicarFiltro(base, f), g = girar(a, p.rot); prev[f] = miniatura(g, 112); liberar(a, g); }
+      // (reduzir devolve a própria imagem quando ela já é pequena: só libera cópias)
+      liberar(reta); if (base !== reta) liberar(base);
+      if (peq !== foto) liberar(peq);
+      if (foto !== p._foto) liberar(foto);
       p.previas = prev;
     } catch { return; }
     if (vez !== prevVez) return;
@@ -579,8 +595,7 @@ $("bSalvar").onclick = () => {
       F.querySelector("#sEnviar").onclick = async () => {
         const arqs = await gerar(); if (!arqs) return;
         if (navigator.canShare?.({ files: arqs })){
-          try { await navigator.share({ files: arqs, title: docAtual.nome }); fechar(); }
-          catch (e) { if (e.name !== "AbortError") avisar("Não consegui abrir o enviar: " + e.message); }
+          fechar(); await compartilhar(arqs, docAtual.nome);
         } else { baixar(arqs); fechar(); avisar("Este navegador não envia arquivos direto: salvei no celular"); }
       };
       F.querySelector("#sBaixar").onclick = async () => {
@@ -681,7 +696,8 @@ function desenharSugestoes(c, a, inp){
     try {
       await carregarPagina(pag);
       const r = await banco.lerPronta(pag.pid);
-      a.sug = await sugestoesDeNome(await carregarImagem(r.blob));
+      const img = await carregarImagem(r.blob);
+      try { a.sug = await sugestoesDeNome(img); } finally { liberar(img); }
     } catch (e) {
       console.error(e); a.sug = null; avisar("Não consegui ler a página: " + (e.message || e));
     }
@@ -745,8 +761,7 @@ async function gerarSeparado(){
 $("bEnviarV").onclick = async () => {
   const arqs = await comEspera("Preparando os arquivos…", gerarSeparado); if (!arqs) return;
   if (navigator.canShare?.({ files: arqs })){
-    try { await navigator.share({ files: arqs }); }
-    catch (e) { if (e.name !== "AbortError") avisar("Não consegui abrir o enviar: " + e.message); }
+    await compartilhar(arqs);
   } else { baixar(arqs); avisar("Este navegador não envia arquivos direto: salvei no celular"); }
 };
 $("bBaixarV").onclick = async () => {
@@ -755,6 +770,19 @@ $("bBaixarV").onclick = async () => {
   avisar(`${plural(arqs.length, "arquivo salvo", "arquivos salvos")} em Downloads`);
 };
 
+// compartilhar precisa acontecer logo depois de um toque; se gerar os arquivos demorou,
+// o celular recusa (NotAllowedError): aí um aviso com o botão "Enviar" resolve
+async function compartilhar(arqs, titulo){
+  try { await navigator.share(titulo ? { files: arqs, title: titulo } : { files: arqs }); return true; }
+  catch (e) {
+    if (e.name === "AbortError") return false;
+    if (e.name === "NotAllowedError"){
+      avisar("Arquivos prontos", { t: "Enviar", f: () => navigator.share({ files: arqs }).catch(x => x.name !== "AbortError" && avisar("Não consegui abrir o enviar")) });
+      return false;
+    }
+    avisar("Não consegui abrir o enviar: " + e.message); return false;
+  }
+}
 function baixar(arqs){
   // um de cada vez, com um respiro: alguns navegadores barram vários downloads juntos
   arqs.forEach((f, i) => setTimeout(() => {
@@ -882,10 +910,12 @@ if ("serviceWorker" in navigator && (location.protocol === "https:" || location.
 /* ================= começo ================= */
 (async () => {
   try {
+    if (!window.indexedDB) throw new Error("sem armazenamento");
     docs = await banco.listarDocs();
     banco.pedirPersistencia();
   } catch (e) {
-    console.error(e); avisar("Não consegui abrir os documentos guardados");
+    console.error(e);
+    avisar("Este navegador não deixa o app guardar documentos (aba anônima?). Abra fora do modo anônimo.");
   }
   desenharInicio();
 })();
