@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Teste de leitura · Yuh</title>
+<style>
+@font-face{font-family:"Atkinson Hyperlegible";font-weight:400;src:url(../../fontes/atkinson-hyperlegible-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Atkinson Hyperlegible";font-weight:700;src:url(../../fontes/atkinson-hyperlegible-latin-700-normal.woff2) format("woff2")}
+:root{--mesa:#DCE2E9;--painel:#F7F9FB;--papel:#FFFFFF;--tinta:#1E2A3A;--tinta-2:#5B6878;--linha:#C7D0DA;--caneta:#1F4FD1;--caneta-suave:#E3EAFB;--livre:#1E8A4C;--livre-f:#E5F4EB;--ocupado:#B7791F;--ocupado-f:#FFF4D6;--carimbo:#B42318;--fonte:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--mesa:#1B222C;--painel:#242D39;--papel:#2B3542;--tinta:#E6EBF1;--tinta-2:#9AA7B6;--linha:#384455;--caneta:#7FA2FF;--caneta-suave:#2C3A57;--livre:#4CC283;--livre-f:#1F3A2C;--ocupado:#E3A948;--ocupado-f:#3D3220;--carimbo:#FF7A6E}}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--fonte);background:var(--mesa);color:var(--tinta);line-height:1.45}
+main{max-width:1100px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:22px;margin:0 0 4px}
+.sub{color:var(--tinta-2);margin:0 0 18px}
+.cartao{background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:16px;margin-bottom:14px}
+.cartao h2{font-size:16px;margin:0 0 10px}
+input[type=password],input[type=text]{width:100%;max-width:440px;height:40px;border:1px solid var(--linha);border-radius:8px;padding:0 10px;background:var(--papel);color:var(--tinta);font:inherit}
+button,.botao{font:inherit;height:40px;padding:0 16px;border-radius:8px;border:1px solid var(--linha);background:var(--papel);color:var(--tinta);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.principal{background:var(--caneta);border-color:var(--caneta);color:#fff;font-weight:700}
+.linha{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.peq{font-size:13px;color:var(--tinta-2)}
+.ok{color:var(--livre)} .erro{color:var(--carimbo)}
+ol{margin:6px 0 0;padding-left:20px} ol li{margin:3px 0}
+.res{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:14px}
+@media (max-width:760px){.res{grid-template-columns:1fr}}
+.fotos{display:flex;gap:8px;flex-wrap:wrap}
+.fotos img{max-width:100%;max-height:320px;border-radius:8px;border:1px solid var(--linha);background:#fff}
+.tipo{display:inline-block;font-size:12px;font-weight:700;padding:2px 10px;border-radius:999px;background:var(--caneta-suave);color:var(--caneta);margin-left:6px}
+.campo{display:grid;grid-template-columns:170px 1fr;gap:8px;align-items:start;padding:8px 10px;border-radius:8px;margin-bottom:4px;border-left:4px solid transparent}
+@media (max-width:480px){.campo{grid-template-columns:1fr;gap:2px}}
+.campo span{font-size:13px;color:var(--tinta-2);padding-top:2px}
+.campo b{word-break:break-word}
+.campo small{display:block;font-size:12px;font-weight:400;color:var(--ocupado)}
+.campo.s-ok{background:var(--livre-f);border-left-color:var(--livre)}
+.campo.s-duvida{background:var(--ocupado-f);border-left-color:var(--ocupado)}
+.campo.s-falta b{color:var(--tinta-2);font-weight:400;font-style:italic}
+details{margin-top:10px} summary{cursor:pointer;color:var(--caneta)}
+pre{white-space:pre-wrap;font-size:12px;background:var(--papel);border:1px solid var(--linha);border-radius:8px;padding:10px;max-height:340px;overflow:auto}
+.legenda{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--tinta-2);margin:4px 0 10px}
+.legenda i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.lendo{display:flex;align-items:center;gap:10px;color:var(--tinta-2)}
+.giro{width:20px;height:20px;border:3px solid var(--caneta-suave);border-top-color:var(--caneta);border-radius:50%;animation:g 1s linear infinite}
+@keyframes g{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<main>
+  <h1>Teste de leitura de documentos</h1>
+  <p class="sub">Yuh Extension · etapa 1. Escolha a foto de um RG, CNH ou certidão e veja o que o Google Vision consegue tirar dela.</p>
+
+  <section class="cartao" id="cChave">
+    <h2>1. Chave do Google Cloud</h2>
+    <div id="semChave">
+      <div class="linha"><input type="password" id="chave" placeholder="Cole aqui a chave (começa com AIza…)" autocomplete="off"><button class="principal" id="salvar">Guardar</button></div>
+      <p class="peq">A chave fica guardada <b>só neste navegador</b>. Não vai para o GitHub nem para nenhum outro lugar além do Google.</p>
+    </div>
+    <div id="comChave" hidden class="linha"><span class="ok">✓ Chave guardada neste navegador</span><button id="esquecer">Esquecer a chave</button></div>
+  </section>
+
+  <section class="cartao">
+    <h2>2. Documento</h2>
+    <div class="linha">
+      <label class="botao principal">Escolher foto(s)<input type="file" id="arq" accept="image/*" multiple hidden></label>
+      <span class="peq">Frente e verso juntas: escolha as duas de uma vez.</span>
+    </div>
+    <p class="peq" id="conta"></p>
+  </section>
+
+  <div id="saida"></div>
+
+  <section class="cartao peq">
+    <b>Privacidade:</b> a foto vai direto deste navegador para o Google Cloud Vision, só para ler o texto. O Google diz que não usa essas imagens para treinar IA e não as guarda. Mesmo assim, avise o dono do documento. Esta página não salva nada: ao fechar, some.
+  </section>
+</main>
+
+<script type="module">
+import { lerDocumento, confiancas } from "./ler.js";
+const $ = id => document.getElementById(id);
+const K = "yuh-vision-chave", C = "yuh-vision-conta";
+const ler = k => { try { return localStorage.getItem(k); } catch { return null; } };
+const gravar = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function mostrarChave(){ const tem = !!ler(K); $("semChave").hidden = tem; $("comChave").hidden = !tem; }
+$("salvar").onclick = () => { const v = $("chave").value.trim(); if (!/^AIza[\w-]{20,}$/.test(v)) return alert("Essa chave não parece certa. Ela começa com AIza."); gravar(K, v); $("chave").value = ""; mostrarChave(); };
+$("esquecer").onclick = () => { gravar(K, null); mostrarChave(); };
+mostrarChave();
+
+// contador do mês (o Google dá 1000 páginas grátis por mês)
+const mes = () => new Date().toISOString().slice(0, 7);
+function conta(mais = 0){
+  let c = {}; try { c = JSON.parse(ler(C) || "{}"); } catch {}
+  if (c.mes !== mes()) c = { mes: mes(), n: 0 };
+  c.n += mais; gravar(C, JSON.stringify(c));
+  $("conta").textContent = `Neste navegador, este mês: ${c.n} de 1000 leituras grátis.`;
+}
+conta();
+
+// reduz a foto (mais rápido e dentro do limite do Google)
+async function preparar(arquivo){
+  const bmp = await createImageBitmap(arquivo);
+  const k = Math.min(1, 2400 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement("canvas"); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+  c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height); bmp.close?.();
+  const url = c.toDataURL("image/jpeg", 0.9); c.width = c.height = 0;
+  return url;
+}
+
+async function vision(base64){
+  const r = await fetch("https://vision.googleapis.com/v1/images:annotate?key=" + encodeURIComponent(ler(K)), {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ requests: [{ image: { content: base64 }, features: [{ type: "DOCUMENT_TEXT_DETECTION" }], imageContext: { languageHints: ["pt"] } }] }),
+  });
+  const j = await r.json().catch(() => ({}));
+  const e = j.error || j.responses?.[0]?.error;
+  if (!r.ok || e) throw new Error(explicar(e, r.status));
+  return j.responses[0].fullTextAnnotation || { text: "" };
+}
+function explicar(e, st){
+  const m = (e && e.message) || "";
+  if (/API key not valid/i.test(m)) return "A chave não vale. Confira se copiou inteira.";
+  if (/billing/i.test(m)) return "O faturamento não está ativado no projeto do Google Cloud (precisa do cartão, mesmo sendo grátis até 1000).";
+  if (/has not been used|is disabled|SERVICE_DISABLED/i.test(m)) return "A Cloud Vision API não está ativada nesse projeto.";
+  if (/referer|blocked|API_KEY_.*_BLOCKED/i.test(m)) return "A chave está bloqueada para este site. Nas restrições da chave, permita só a Cloud Vision API (sem restringir por site), ou adicione este endereço.";
+  if (st === 429 || /quota/i.test(m)) return "Passou do limite de uso. Espere um pouco.";
+  return `O Google respondeu com erro (${st}). ${m}`;
+}
+
+$("arq").onchange = async () => {
+  const fs = [...$("arq").files]; $("arq").value = ""; if (!fs.length) return;
+  if (!ler(K)) return alert("Primeiro guarde a chave do Google (passo 1).");
+  const box = document.createElement("section"); box.className = "cartao";
+  box.innerHTML = `<div class="lendo"><span class="giro"></span>Lendo ${fs.length > 1 ? fs.length + " fotos" : "a foto"}…</div>`;
+  $("saida").prepend(box);
+  const t0 = performance.now();
+  try {
+    const urls = await Promise.all(fs.map(preparar));
+    const fts = await Promise.all(urls.map(u => vision(u.split(",")[1])));
+    conta(fts.length);
+    const texto = fts.map(f => f.text || "").join("\n");
+    const conf = new Map(); for (const f of fts) for (const [k, v] of confiancas(f)) conf.set(k, Math.min(conf.get(k) ?? 1, v));
+    const { tipo, ficha } = lerDocumento(texto, conf);
+    const seg = ((performance.now() - t0) / 1000).toFixed(1);
+    const n = s => ficha.filter(f => f.situacao === s).length;
+    box.innerHTML = `<h2>${esc(fs.map(f => f.name).join(" + "))}<span class="tipo">${esc(tipo)}</span></h2>
+      <p class="peq">Lido em ${seg} s · ${n("ok")} certos, ${n("duvida")} para conferir, ${n("falta")} não achados</p>
+      <div class="res">
+        <div class="fotos">${urls.map(u => `<img src="${u}" alt="">`).join("")}</div>
+        <div>
+          <div class="legenda"><span><i style="background:var(--livre)"></i>lido com segurança</span><span><i style="background:var(--ocupado)"></i>conferir</span><span><i style="background:var(--linha)"></i>não achou</span></div>
+          ${ficha.map(f => `<div class="campo s-${f.situacao}"><span>${esc(f.rotulo)}</span><b>${f.valor ? esc(f.valor) : "não encontrado"}${f.porque ? `<small>${esc(f.porque)}</small>` : ""}</b></div>`).join("")}
+          <details><summary>Ver o texto que o Google leu</summary><pre>${esc(texto) || "(nenhum texto)"}</pre></details>
+          <details><summary>Copiar para me mandar (sem a foto)</summary><p class="peq">Se algum campo veio errado, me mande este texto. <b>Troque nomes e números reais</b> antes, se o documento não for seu.</p><pre>${esc(JSON.stringify({ tipo, ficha: ficha.map(f => [f.rotulo, f.valor, f.situacao]), texto }, null, 1))}</pre></details>
+        </div>
+      </div>`;
+  } catch (e) {
+    box.innerHTML = `<h2>${esc(fs.map(f => f.name).join(" + "))}</h2><p class="erro">${esc(e.message || e)}</p>`;
+  }
+};
+</script>
+</body>
+</html>
