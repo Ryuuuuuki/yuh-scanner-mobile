@@ -4,8 +4,9 @@ import { acharFolha, cantosPadrao, movimento } from "./bordas.js";
 import * as banco from "./banco.js";
 import { montarPdf } from "./pdf.js";
 import { sugestoesDeNome } from "./ocr.js";
+import * as ponte from "./ponte.js";
 
-export const VERSAO = "1.1.2";
+export const VERSAO = "1.2.0";
 const $ = id => document.getElementById(id);
 const celular = $("celular");
 const FILTROS = [["realcado", "Realçado"], ["original", "Original"], ["cinza", "Cinza"], ["pb", "P&B"]];
@@ -465,6 +466,8 @@ function menuDoc(d){
     opcoes: [
       { t: "Renomear", f: () => renomear(d, () => docAtual === d && !$("tDoc").hidden ? desenharDoc(false) : desenharInicio()) },
       { t: "Organizar páginas", f: async () => { if (docAtual !== d || $("tDoc").hidden) await abrirDoc(d, 0); abrirGrade(); } },
+      { t: "Conectar ao PC", f: abrirLeitorQr },
+      ...(ponte.pcs().length ? [{ t: "PCs conectados", f: mostrarPcs }] : []),
       { t: "Excluir documento", perigo: true, f: () => folhaBaixo({
         titulo: "Excluir o documento?", texto: `“${d.nome}” e ${d.paginas.length > 1 ? `as ${d.paginas.length} páginas somem` : "a página some"} do celular.`,
         opcoes: [{ t: "Excluir documento", perigo: true, f: () => excluirDocumento(d) }],
@@ -572,6 +575,17 @@ $("bSalvar").onclick = () => {
         </div>`);
         F.querySelector("#eVarios").onclick = () => { fechar(); setTimeout(() => abrirSeparado(docAtual), 200); };
       }
+      // levar para o formulário no PC (Yuh Extension)
+      const lpcs = ponte.pcs(), alvo = lpcs.find(p => p.id === pcEscolhido) || lpcs[0];
+      F.insertAdjacentHTML("beforeend", `<button class="opc destaque" id="oPc"><span class="ico">${ICO_PC}</span>
+        <span style="flex:1;min-width:0"><b>Levar para o formulário no PC</b><small>Manda para a Yuh Extension, que lê os dados</small><span class="pc${alvo ? "" : " nenhum"}"><i></i><span id="oPcNome"></span></span></span>${lpcs.length > 1 ? '<span class="trocar" id="oTrocar">trocar</span>' : ""}</button>`);
+      F.querySelector("#oPcNome").textContent = alvo ? alvo.nome : "Nenhum PC conectado · toque para conectar";
+      F.querySelector("#oPc").onclick = e => {
+        fechar();
+        if (!alvo) return setTimeout(abrirLeitorQr, 230);
+        if (e.target.id === "oTrocar") return setTimeout(escolherPc, 230);
+        setTimeout(() => levarParaPc(alvo, docAtual), 230);
+      };
       F.insertAdjacentHTML("beforeend", `
         <label class="campo">Nome do arquivo<span class="linha"><input id="sNome" enterkeyhint="done" autocomplete="off"><span class="ext" id="sExt">.pdf</span></span></label>
         <div class="seg" role="group" aria-label="Formato"><button id="sPdf" aria-pressed="true">PDF</button><button id="sJpg" aria-pressed="false">JPG</button></div>
@@ -894,6 +908,125 @@ window.addEventListener("popstate", () => {
   else if (!$("tDoc").hidden) $("docVoltar").click();
   if ($("tInicio").hidden && !empilhado){ history.pushState({ yuh: 1 }, ""); empilhado = true; }
 });
+
+/* ================= levar para o formulário no PC (Yuh Extension) ================= */
+const ICO_PC = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>';
+const KURU = "img/kuru.gif";
+let pcEscolhido = null;
+
+function escolherPc(){
+  const l = ponte.pcs();
+  folhaBaixo({ titulo: "Para qual PC?", opcoes: l.map(p => ({ t: p.nome, f: () => { pcEscolhido = p.id; $("bSalvar").click(); } })) });
+}
+function mostrarPcs(){
+  const l = ponte.pcs();
+  folhaBaixo({ titulo: "PCs conectados", texto: "Toque num PC para desconectar.", opcoes: [
+    ...l.map(p => ({ t: `${p.nome} · desconectar`, perigo: true, f: async () => { await ponte.desconectarPc(p); if (pcEscolhido === p.id) pcEscolhido = null; avisar(`${p.nome} desconectado`); } })),
+    { t: "Conectar outro PC", f: abrirLeitorQr },
+  ] });
+}
+
+// câmera lendo o QR Code da Yuh Extension
+let leitor = null;
+async function abrirLeitorQr(){
+  const t = document.createElement("div"); t.className = "cam-qr"; t.id = "camQr";
+  t.innerHTML = `<div class="cam-topo"><button class="ic" aria-label="Fechar"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button><b>Conectar ao PC</b></div>
+    <div class="visor"><video playsinline muted></video><div class="mira"><i></i><i></i><i></i><i></i><span class="linha-scan"></span></div></div>
+    <div class="cam-dica-qr" id="qrDica">No PC, abra a <b>Yuh Extension</b> e toque no <b>ícone de celular</b> no topo. Depois aponte para o QR Code.</div>`;
+  celular.append(t);
+  const fechar = () => { leitor?.parar(); leitor = null; t.remove(); };
+  t.querySelector(".cam-topo .ic").onclick = fechar;
+  const video = t.querySelector("video");
+  let parar = false, stream = null;
+  leitor = { parar: () => { parar = true; stream?.getTracks().forEach(x => x.stop()); }, fechar };
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 } }, audio: false });
+    video.srcObject = stream; await video.play();
+  } catch { $("qrDica").textContent = "Não consegui abrir a câmera. Libere a câmera para este app e tente de novo."; return; }
+  let detector = null;
+  try { if ("BarcodeDetector" in window && (await BarcodeDetector.getSupportedFormats()).includes("qr_code")) detector = new BarcodeDetector({ formats: ["qr_code"] }); } catch {}
+  if (!detector && !window.jsQR) await new Promise(ok => { const sc = document.createElement("script"); sc.src = "js/vendor/jsQR.js"; sc.onload = ok; sc.onerror = ok; document.head.append(sc); });
+  const c = document.createElement("canvas"), g = c.getContext("2d", { willReadFrequently: true });
+  const volta = async () => {
+    if (parar) return;
+    try {
+      let texto = null;
+      if (video.videoWidth){
+        if (detector){ const r = await detector.detect(video); texto = r[0]?.rawValue || null; }
+        else if (window.jsQR){
+          const k = Math.min(1, 720 / Math.max(video.videoWidth, video.videoHeight));
+          c.width = Math.round(video.videoWidth * k); c.height = Math.round(video.videoHeight * k);
+          g.drawImage(video, 0, 0, c.width, c.height);
+          texto = window.jsQR(g.getImageData(0, 0, c.width, c.height).data, c.width, c.height, { inversionAttempts: "dontInvert" })?.data || null;
+        }
+      }
+      if (texto && qrLido(texto)) return;
+    } catch {}
+    setTimeout(volta, 250);
+  };
+  volta();
+}
+// também usado pelo link do QR (câmera comum) e pelos testes
+function qrLido(texto){
+  const qr = ponte.lerQr(texto);
+  if (!qr){ if ($("qrDica")) $("qrDica").textContent = "Esse QR Code não é da Yuh Extension."; return false; }
+  leitor?.fechar();
+  conectarCom(qr);
+  return true;
+}
+window.__yuhQr = qrLido;
+
+async function conectarCom(qr){
+  const tc = document.createElement("div"); tc.className = "tela-c"; tc.id = "telaCodigo";
+  tc.innerHTML = `<header class="barra"><b style="margin-left:6px">Conectar ao PC</b></header><div class="meio"><img class="kuru" src="${KURU}" alt=""><b>Falando com o PC…</b></div>`;
+  celular.append(tc);
+  let r;
+  try { r = await ponte.comecarConexao(qr); }
+  catch (e) { tc.remove(); avisar(e.message || "Não consegui falar com o PC (sem internet?)"); return; }
+  tc.innerHTML = `<header class="barra"><b style="margin-left:6px">Conectar ao PC</b></header>
+    <div class="meio"><div class="ico-pc">${ICO_PC}</div><b class="nome-pc"></b>
+      <span>Confira se o <b>mesmo código</b> aparece na tela do PC:</span>
+      <div class="codigo">${[...r.codigo].map(d => `<span>${d}</span>`).join("")}</div>
+      <small>Isso garante que você está conectando o seu PC, e não outro.</small></div>
+    <div class="acoes"><button class="btn principal" id="cIgual">Os códigos são iguais</button><button class="btn leve" id="cDif">São diferentes · cancelar</button></div>`;
+  tc.querySelector(".nome-pc").textContent = qr.n;
+  tc.querySelector("#cDif").onclick = () => { tc.remove(); avisar("Conexão cancelada. Nada foi conectado."); };
+  tc.querySelector("#cIgual").onclick = async () => {
+    try {
+      const pc = await ponte.confirmarConexao(r.pendente);
+      pcEscolhido = pc.id;
+      tc.innerHTML = `<div class="meio"><div class="ok-grande"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg></div>
+        <b style="font-size:18px">Conectado!</b><span>Agora em <b>Salvar ou enviar → Levar para o formulário no PC</b>, o documento vai direto para <b class="nome-pc"></b>.</span></div>
+        <div class="acoes"><button class="btn principal" id="cOk">Entendi</button></div>`;
+      tc.querySelector(".nome-pc").textContent = pc.nome;
+      tc.querySelector("#cOk").onclick = () => tc.remove();
+    } catch (e) { avisar(e.message || "Não consegui confirmar. Tente de novo."); }
+  };
+}
+
+async function levarParaPc(pc, d){
+  const e = document.createElement("div"); e.className = "enviando";
+  e.innerHTML = `<div><img class="kuru" src="${KURU}" alt=""><b></b><p>Trancado: só o seu PC consegue abrir</p></div>`;
+  e.querySelector("b").textContent = `Enviando para ${pc.nome}…`;
+  celular.append(e);
+  try {
+    const pags = await paginasProntas(d);
+    const id = await ponte.enviarAoPc(pc, d.nome, pags.map(p => p.blob));
+    e.querySelector("b").textContent = "Enviado. Esperando o PC pegar…";
+    let entregue = false;
+    for (let i = 0; i < 12 && !entregue; i++){ await new Promise(r => setTimeout(r, 2500)); entregue = await ponte.foiEntregue(pc, id); }
+    e.innerHTML = entregue
+      ? `<div><div class="ok"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg></div><b>Chegou no PC</b><p>Já está na Yuh Extension</p></div>`
+      : `<div><div class="ok"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg></div><b>Enviado</b><p>Chega assim que a Yuh Extension estiver aberta no PC (fica guardado por 24 h)</p></div>`;
+    setTimeout(() => e.remove(), 2600);
+  } catch (err) { e.remove(); avisar(err.message || "Não consegui enviar"); }
+}
+
+// aberto pela câmera comum (link do QR Code)
+if (location.hash.startsWith("#par=")){
+  const texto = location.href; history.replaceState(null, "", location.pathname + location.search);
+  setTimeout(() => qrLido(texto), 600);
+}
 
 /* ================= atualização (service worker) ================= */
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")){

@@ -1,11 +1,12 @@
 // Yuh Scanner Mobile — guarda o app no celular para abrir rápido e funcionar sem internet.
 // Ao publicar uma versão nova, aumente VERSAO: o celular baixa tudo de novo sozinho.
-const VERSAO = "1.1.2";
+const VERSAO = "1.2.0";
 const CACHE = "yuh-mobile-" + VERSAO;
 const CACHE_OCR = "yuh-ocr-5.1.1"; // não muda a cada versão do app (o leitor é sempre o mesmo)
 const ARQUIVOS = [
   "./", "index.html", "manifest.webmanifest", "css/app.css",
   "js/app.js", "js/imagem.js", "js/bordas.js", "js/banco.js", "js/pdf.js", "js/ocr.js",
+  "js/ponte.js", "js/cripto.js", "js/vendor/jsQR.js", "img/kuru.gif",
   "fontes/atkinson-hyperlegible-latin-400-normal.woff2", "fontes/atkinson-hyperlegible-latin-700-normal.woff2",
   "icones/icone-192.png", "icones/icone-512.png", "icones/icone-32.png", "icones/apple-touch-icon.png",
 ];

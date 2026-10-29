@@ -262,3 +262,45 @@ button{cursor:pointer}
   .seg button{height:40px}
   .fab{height:54px;bottom:16px}
 }
+
+/* ===== levar para o formulário no PC (Yuh Extension) ===== */
+.opc{display:flex;align-items:center;gap:12px;border:1px solid var(--linha);background:var(--papel);color:var(--tinta);border-radius:14px;padding:12px;text-align:left;width:100%;margin-bottom:10px}
+.opc .ico{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:var(--caneta-suave);color:var(--caneta);flex:none}
+.opc b{display:block;font-size:15px}
+.opc small{display:block;color:var(--tinta-2);font-size:12px}
+.opc .pc{display:inline-flex;align-items:center;gap:5px;margin-top:4px;font-size:12px;color:var(--livre);font-weight:700;max-width:100%}
+.opc .pc i{width:7px;height:7px;border-radius:50%;background:var(--livre);flex:none}
+.opc .pc span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.opc .pc.nenhum{color:var(--ocupado)}
+.opc .pc.nenhum i{background:var(--ocupado)}
+.opc.destaque{border-color:var(--caneta);box-shadow:0 0 0 2px var(--caneta-suave)}
+.opc .trocar{font-size:12px;color:var(--caneta);font-weight:700;padding:6px 2px}
+.cam-qr{position:absolute;top:0;right:0;bottom:0;left:0;background:#000;z-index:30;display:flex;flex-direction:column;color:#fff}
+.cam-qr .cam-topo{position:relative;background:none}
+.cam-qr .cam-topo b{flex:1;font-size:16px}
+.visor{flex:1;position:relative;display:grid;place-items:center;overflow:hidden}
+.visor video{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover}
+.mira{width:230px;height:230px;position:relative}
+.mira i{position:absolute;width:44px;height:44px;border:4px solid #7FA2FF}
+.mira i:nth-child(1){left:0;top:0;border-right:0;border-bottom:0;border-radius:14px 0 0 0}
+.mira i:nth-child(2){right:0;top:0;border-left:0;border-bottom:0;border-radius:0 14px 0 0}
+.mira i:nth-child(3){left:0;bottom:0;border-right:0;border-top:0;border-radius:0 0 0 14px}
+.mira i:nth-child(4){right:0;bottom:0;border-left:0;border-top:0;border-radius:0 0 14px 0}
+.linha-scan{position:absolute;left:10px;right:10px;height:2px;background:#7FA2FF;box-shadow:0 0 12px #7FA2FF;animation:varre 1.6s ease-in-out infinite}
+@keyframes varre{0%,100%{top:14px}50%{top:210px}}
+.cam-dica-qr{text-align:center;padding:16px 24px calc(26px + env(safe-area-inset-bottom));font-size:14px;color:#cfd6df}
+.cam-dica-qr b{color:#fff}
+.tela-c{position:absolute;top:0;right:0;bottom:0;left:0;background:var(--painel);z-index:30;display:flex;flex-direction:column}
+.tela-c .meio{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center;color:var(--tinta-2);font-size:14px}
+.tela-c .meio > b{color:var(--tinta);font-size:17px}
+.tela-c .ico-pc{width:56px;height:56px;border-radius:16px;display:grid;place-items:center;background:var(--caneta-suave);color:var(--caneta)}
+.tela-c .acoes{padding:14px 16px calc(20px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:8px}
+.tela-c .btn.leve{border:0;background:none;color:var(--tinta-2)}
+.codigo{display:flex;gap:8px}
+.codigo span{width:48px;height:60px;border-radius:12px;background:var(--papel);border:2px solid var(--caneta);display:grid;place-items:center;font-size:30px;font-weight:700;color:var(--caneta)}
+.ok-grande{width:72px;height:72px;border-radius:50%;background:var(--livre);display:grid;place-items:center}
+.kuru{display:block;margin:0 auto 12px;width:150px;height:auto;background:#fff;border-radius:18px;padding:8px;box-shadow:0 6px 20px rgba(0,0,0,.3)}
+.enviando{position:absolute;top:0;right:0;bottom:0;left:0;background:rgba(14,20,28,.82);z-index:30;display:grid;place-items:center;text-align:center;color:#fff;padding:24px}
+.enviando b{font-size:17px}
+.enviando p{font-size:13px;opacity:.85;margin:6px 0 0}
+.enviando .ok{width:64px;height:64px;border-radius:50%;background:var(--livre);display:grid;place-items:center;margin:0 auto 14px}
