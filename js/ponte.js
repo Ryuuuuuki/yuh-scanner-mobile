@@ -78,3 +78,13 @@ export async function enviarAoPc(pc, nome, blobs){
 export async function foiEntregue(pc, id){
   try { const r = await fetch(`${pc.u}/c/${pc.c}/${id}?so=existe`); return r.ok && !(await r.json()).existe; } catch { return false; }
 }
+
+// o que já foi para cada PC (para mandar só o que falta quando conecta de novo)
+const K_ENV = "yuh-enviados";
+export function jaEnviado(pc, doc){ const m = ler(K_ENV, {}); return m[pc.id]?.[doc.id] === doc.alterado; }
+export function marcarEnviado(pc, doc){
+  const m = ler(K_ENV, {}); const x = m[pc.id] || (m[pc.id] = {});
+  x[doc.id] = doc.alterado;
+  const ids = Object.keys(x); if (ids.length > 300) for (const k of ids.slice(0, ids.length - 300)) delete x[k];
+  gravar(K_ENV, m);
+}

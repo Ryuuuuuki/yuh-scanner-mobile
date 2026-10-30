@@ -6,7 +6,7 @@ import { montarPdf } from "./pdf.js";
 import { sugestoesDeNome } from "./ocr.js";
 import * as ponte from "./ponte.js";
 
-export const VERSAO = "1.2.1";
+export const VERSAO = "1.3.0";
 const $ = id => document.getElementById(id);
 const celular = $("celular");
 const FILTROS = [["realcado", "Realçado"], ["original", "Original"], ["cinza", "Cinza"], ["pb", "P&B"]];
@@ -997,12 +997,34 @@ async function conectarCom(qr){
       const pc = await ponte.confirmarConexao(r.pendente);
       pcEscolhido = pc.id;
       tc.innerHTML = `<div class="meio"><div class="ok-grande"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg></div>
-        <b style="font-size:18px">Conectado!</b><span>Agora em <b>Salvar ou enviar → Levar para o formulário no PC</b>, o documento vai direto para <b class="nome-pc"></b>.</span></div>
+        <b style="font-size:18px">Conectado!</b><span id="cEnvio"></span><span>Depois, em <b>Salvar ou enviar → Levar para o formulário no PC</b>, o documento vai direto para <b class="nome-pc"></b>.</span></div>
         <div class="acoes"><button class="btn principal" id="cOk">Entendi</button></div>`;
       tc.querySelector(".nome-pc").textContent = pc.nome;
       tc.querySelector("#cOk").onclick = () => tc.remove();
+      enviarTudo(pc, tc.querySelector("#cEnvio"));
     } catch (e) { avisar(e.message || "Não consegui confirmar. Tente de novo."); }
   };
+}
+
+// assim que conecta: manda para o PC todos os documentos do celular que ainda não foram para ele
+const MAX_DE_UMA_VEZ = 20;
+async function enviarTudo(pc, el){
+  const fila = docs.filter(d => d.paginas.length && !ponte.jaEnviado(pc, d)).slice(0, MAX_DE_UMA_VEZ);
+  const msg = h => { if (el) el.innerHTML = h; };
+  if (!fila.length){ msg("Não há documentos novos no celular para mandar."); return; }
+  let ok = 0;
+  for (const d of fila){
+    msg(`<img class="kuru" src="${KURU}" alt="" style="width:64px;display:block;margin:0 auto 6px">Mandando os documentos do celular: <b>${ok + 1} de ${fila.length}</b>…`);
+    try {
+      const pags = await paginasProntas(d);
+      await ponte.enviarAoPc(pc, d.nome, pags.map(p => p.blob));
+      ponte.marcarEnviado(pc, d); ok++;
+    } catch (e) {
+      if (el) el.textContent = `Mandei ${ok} de ${fila.length}. ${e.message || "Não consegui mandar o resto."}`;
+      return;
+    }
+  }
+  msg(`<b style="color:var(--livre)">✓ ${ok === 1 ? "1 documento enviado" : ok + " documentos enviados"}</b> para a Yuh Extension.`);
 }
 
 async function levarParaPc(pc, d){
@@ -1013,6 +1035,7 @@ async function levarParaPc(pc, d){
   try {
     const pags = await paginasProntas(d);
     const id = await ponte.enviarAoPc(pc, d.nome, pags.map(p => p.blob));
+    ponte.marcarEnviado(pc, d);
     e.querySelector("b").textContent = "Enviado. Esperando o PC pegar…";
     let entregue = false;
     for (let i = 0; i < 12 && !entregue; i++){ await new Promise(r => setTimeout(r, 2500)); entregue = await ponte.foiEntregue(pc, id); }
