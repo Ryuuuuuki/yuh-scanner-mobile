@@ -16,6 +16,7 @@ Playwright (Chromium) com câmera falsa: `--use-fake-device-for-media-stream --u
 
 ## Versões
 - 1.2.0 Levar para o formulário no PC (Yuh Extension): menu ⋮ → Conectar ao PC (QR + código de 4 números), pacotes trancados (ECDH+AES-GCM, `js/cripto.js` = cópia de `yuh-extension/lib/cripto.js`) via carteiro na Cloudflare; Kuru nas esperas.
+- 1.2.1 Ícone de QR Code no canto superior direito da tela inicial (ao lado da lua) abre direto o leitor para conectar ao PC.
 - 1.0.0 app; 1.0.1 foto com um toque (quadro do vídeo, câmera fica ligada nas bordas); 1.1.0 vários arquivos (salvar separado) + Sugerir nome; 1.1.1 sem `viewport-fit=cover` (no Android novo o app ficava por baixo da barra de navegação: o Chrome não informa a área segura); 1.1.2 compatibilidade: `100vh` antes de `100dvh` (Chrome < 108 / iOS < 15.4 abriam em branco), sem `inset` (iOS 14), memória de imagens liberada na hora (limite do iPhone), plano B do Enviar (NotAllowedError), aviso em aba anônima, moldura de celular só no computador, layout compacto em tela baixa.
 
 ## Pendências

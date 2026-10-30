@@ -6,7 +6,7 @@ import { montarPdf } from "./pdf.js";
 import { sugestoesDeNome } from "./ocr.js";
 import * as ponte from "./ponte.js";
 
-export const VERSAO = "1.2.0";
+export const VERSAO = "1.2.1";
 const $ = id => document.getElementById(id);
 const celular = $("celular");
 const FILTROS = [["realcado", "Realçado"], ["original", "Original"], ["cinza", "Cinza"], ["pb", "P&B"]];
@@ -888,6 +888,7 @@ $("camFlash").onclick = async () => {
 };
 $("camGaleria").onclick = $("camGaleria2").onclick = () => $("arqGaleria").click();
 $("arqGaleria").onchange = e => { const a = [...e.target.files]; e.target.value = ""; if (a.length) fotosDaGaleria(a); };
+$("bQr").onclick = () => abrirLeitorQr();
 $("bTema").onclick = () => {
   const r = document.documentElement, escuro = r.dataset.theme ? r.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
   r.dataset.theme = escuro ? "light" : "dark";
