@@ -6,7 +6,7 @@ import { montarPdf } from "./pdf.js";
 import { sugestoesDeNome } from "./ocr.js";
 import * as ponte from "./ponte.js";
 
-export const VERSAO = "1.3.0";
+export const VERSAO = "1.3.1";
 const $ = id => document.getElementById(id);
 const celular = $("celular");
 const FILTROS = [["realcado", "Realçado"], ["original", "Original"], ["cinza", "Cinza"], ["pb", "P&B"]];
@@ -1063,6 +1063,26 @@ if ("serviceWorker" in navigator && (location.protocol === "https:" || location.
     else avisar("Versão nova do app pronta", { t: "Atualizar", f: () => location.reload() });
   });
 }
+
+/* ================= barra de botões do Android ================= */
+// Em alguns Android, o app instalado às vezes recebe a tela inteira, INCLUSIVE a faixa da barra de
+// botões (◀ ● ■), sem avisar (a "área segura" vem zerada). Aí os botões de baixo ficam escondidos.
+// Se a altura do app for quase a tela toda (só a barra de cima descontada), damos uma folga embaixo.
+function ajustarFundo(){
+  let extra = 0;
+  try {
+    if (/Android/i.test(navigator.userAgent) && screen.height > screen.width){
+      const sobra = screen.height - window.innerHeight;     // o que o sistema está ocupando (barra de cima + de baixo)
+      if (sobra < 70) extra = 48;                            // normal: barra de cima (24–45) + de baixo (~48) ≥ 70
+    }
+  } catch {}
+  document.documentElement.style.setProperty("--fundo-extra", extra + "px");
+}
+ajustarFundo();
+window.addEventListener("resize", ajustarFundo);
+window.visualViewport?.addEventListener("resize", ajustarFundo);
+window.addEventListener("orientationchange", () => setTimeout(ajustarFundo, 300));
+document.addEventListener("visibilitychange", () => { if (!document.hidden) setTimeout(ajustarFundo, 200); });
 
 /* ================= começo ================= */
 (async () => {
