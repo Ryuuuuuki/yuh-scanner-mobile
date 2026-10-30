@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Protótipo: selecionar vários</title>
+<link rel="stylesheet" href="../css/app.css">
+<style>
+/* ---- só o que é novo neste protótipo ---- */
+.doc{position:relative;transition:background .15s,border-color .15s;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.doc .marca{display:none;width:26px;height:26px;border-radius:50%;border:2px solid var(--tinta-2);flex:none;place-items:center}
+.selecionando .doc .marca{display:grid}
+.selecionando .doc .mais{display:none}
+.doc.sel{background:var(--caneta-suave);border-color:var(--caneta)}
+.doc.sel .marca{background:var(--caneta);border-color:var(--caneta);color:var(--sobre-caneta)}
+.doc.sel .marca::after{content:"";width:6px;height:11px;border:solid currentColor;border-width:0 3px 3px 0;transform:translate(0,-1px) rotate(45deg)}
+/* barra de seleção (troca a barra de cima, como no WhatsApp do celular) */
+.barra-sel{display:none}
+.selecionando .barra-normal{display:none}
+.selecionando .barra-sel{display:flex}
+.barra-sel b{flex:1;font-size:18px;margin-left:4px}
+/* faixa de ações embaixo (no lugar do Digitalizar) */
+.acoes-sel{position:absolute;left:12px;right:12px;bottom:calc(16px + var(--fundo));display:none;justify-content:space-around;background:var(--painel);border:1px solid var(--linha);border-radius:20px;padding:8px 4px;box-shadow:var(--sombra)}
+.selecionando .acoes-sel{display:flex}
+.selecionando .fab{display:none}
+.acoes-sel button{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;border:0;background:none;color:var(--tinta);font-size:12px;padding:6px 2px;border-radius:12px}
+.acoes-sel button:active{background:var(--caneta-suave)}
+.acoes-sel button:disabled{opacity:.35}
+.acoes-sel svg{color:var(--caneta)}
+.acoes-sel .perigo svg{color:var(--carimbo)}
+.dica-proto{position:absolute;left:12px;right:12px;top:70px;background:#ffe9a8;color:#3a2a00;border-radius:12px;padding:10px 12px;font-size:13px;z-index:5}
+.dica-proto button{border:0;background:none;font-weight:700;float:right}
+/* folha de baixo (protótipo) */
+.fundo-proto{position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;z-index:20}
+.fundo-proto .folha-baixo{transform:none}
+.aviso-proto{position:absolute;left:50%;bottom:calc(110px + var(--fundo));transform:translateX(-50%);background:var(--tinta);color:var(--painel);padding:10px 16px;border-radius:12px;font-size:14px;z-index:30;max-width:90%;text-align:center}
+</style>
+</head>
+<body>
+<div class="celular" id="cel">
+  <section class="tela" id="tInicio">
+    <header class="barra barra-normal">
+      <h1><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M9 7h6M9 11h6M9 15h4"/></svg>Yuh Scanner</h1>
+      <button class="ic" aria-label="Ler QR Code"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3"/><rect x="7" y="7" width="4" height="4" rx=".5"/><rect x="13" y="13" width="4" height="4" rx=".5"/><path d="M13 7h4v2M7 15v2h2"/></svg></button>
+      <button class="ic" aria-label="Tema"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+    </header>
+    <header class="barra barra-sel">
+      <button class="ic" id="sSair" aria-label="Cancelar seleção"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      <b id="sConta">1 selecionado</b>
+      <button class="ic" id="sTudo" aria-label="Selecionar tudo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12l3 3 5-6"/></svg></button>
+    </header>
+    <div class="lista" id="lista"></div>
+    <button class="fab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/></svg>Digitalizar</button>
+    <div class="acoes-sel" id="acoes">
+      <button data-a="compartilhar"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>Compartilhar</button>
+      <button data-a="pc"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Levar ao PC</button>
+      <button data-a="juntar"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="10" height="13" rx="2"/><rect x="11" y="8" width="10" height="13" rx="2"/></svg>Juntar</button>
+      <button data-a="salvar"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Baixar</button>
+      <button data-a="excluir" class="perigo"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>Excluir</button>
+    </div>
+    <div class="dica-proto" id="dica"><button onclick="this.parentNode.remove()">ok</button><b>Protótipo.</b> Segure o dedo num documento para selecionar (como no WhatsApp). Depois é só tocar nos outros.</div>
+  </section>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const docs = [
+  { nome: "2026-10-29_1110_Documento", p: 1, q: "ontem, 11:10" },
+  { nome: "2026-10-29_1109_Documento", p: 1, q: "ontem, 11:09" },
+  { nome: "2026-10-29_1107_Documento", p: 2, q: "ontem, 11:08" },
+  { nome: "2026-10-29_1056_Documento", p: 5, q: "ontem, 11:03" },
+  { nome: "RG Maria (exemplo)", p: 2, q: "segunda, 09:41" },
+];
+let sel = new Set(), modo = false;
+const pl = (n, a, b) => `${n} ${n === 1 ? a : b}`;
+function desenhar(){
+  const L = $("lista"); L.innerHTML = `<h2>Documentos</h2>`;
+  $("tInicio").classList.toggle("selecionando", modo);
+  docs.forEach((d, i) => {
+    const b = document.createElement("div"); b.className = "doc" + (sel.has(i) ? " sel" : "");
+    b.innerHTML = `<span class="marca"></span><img alt="" src="data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="52" height="70"><rect width="52" height="70" fill="#fff"/><g fill="#c9ced6"><rect x="6" y="8" width="40" height="3"/><rect x="6" y="15" width="30" height="3"/><rect x="6" y="22" width="36" height="3"/><rect x="6" y="29" width="24" height="3"/></g></svg>')}"><span class="inf"><b></b><small></small></span><button class="mais" aria-label="Opções"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>`;
+    b.querySelector("b").textContent = d.nome; b.querySelector("small").textContent = `${pl(d.p, "página", "páginas")} · ${d.q}`;
+    let t = null, longo = false;
+    b.onpointerdown = () => { longo = false; t = setTimeout(() => { longo = true; if (!modo){ modo = true; sel.add(i); navigator.vibrate?.(30); desenhar(); } }, 450); };
+    b.onpointerup = b.onpointerleave = b.onpointercancel = () => clearTimeout(t);
+    b.oncontextmenu = e => e.preventDefault();
+    b.onclick = e => {
+      if (longo) return;
+      if (e.target.closest(".mais")) return folha("Opções do documento", "", [["Renomear"], ["Organizar páginas"], ["Selecionar vários", () => { modo = true; sel.add(i); desenhar(); }], ["Excluir documento", null, true]]);
+      if (modo){ sel.has(i) ? sel.delete(i) : sel.add(i); if (!sel.size) modo = false; desenhar(); }
+      else aviso(`(abriria “${d.nome}”)`);
+    };
+    L.append(b);
+  });
+  const n = sel.size, pags = [...sel].reduce((s, i) => s + docs[i].p, 0);
+  $("sConta").textContent = pl(n, "selecionado", "selecionados");
+  document.querySelector('[data-a="juntar"]').disabled = n < 2;
+  window._pags = pags;
+}
+function sair(){ modo = false; sel.clear(); desenhar(); }
+$("sSair").onclick = sair;
+$("sTudo").onclick = () => { if (sel.size === docs.length) sel.clear(); else docs.forEach((_, i) => sel.add(i)); if (!sel.size) modo = false; desenhar(); };
+history.pushState(null, ""); addEventListener("popstate", () => { if (modo){ sair(); history.pushState(null, ""); } });   // botão voltar do Android sai da seleção
+
+function folha(titulo, texto, opcoes){
+  const f = document.createElement("div"); f.className = "fundo-proto";
+  f.innerHTML = `<div class="folha-baixo"><h3></h3>${texto ? "<p></p>" : ""}<div class="ops"></div><button class="btn leve">Cancelar</button></div>`;
+  f.querySelector("h3").textContent = titulo; if (texto) f.querySelector("p").textContent = texto;
+  for (const [t, fn, perigo, sub] of opcoes){
+    const o = document.createElement("button"); o.className = "opc"; if (perigo) o.style.color = "var(--carimbo)";
+    o.innerHTML = `<span><b></b>${sub ? "<small></small>" : ""}</span>`; o.querySelector("b").textContent = t; if (sub) o.querySelector("small").textContent = sub;
+    o.onclick = () => { f.remove(); fn ? fn() : aviso(`(${t})`); };
+    f.querySelector(".ops").append(o);
+  }
+  f.onclick = e => { if (e.target === f || e.target.classList.contains("leve")) f.remove(); };
+  $("cel").append(f);
+}
+function aviso(t){ const a = document.createElement("div"); a.className = "aviso-proto"; a.textContent = t; $("cel").append(a); setTimeout(() => a.remove(), 2200); }
+const resumo = () => `${pl(sel.size, "documento", "documentos")} · ${pl(window._pags, "página", "páginas")}`;
+$("acoes").onclick = e => {
+  const a = e.target.closest("[data-a]")?.dataset.a; if (!a) return;
+  if (a === "compartilhar") folha("Compartilhar", resumo(), [
+    ["Um PDF para cada documento", () => { aviso("Abre o compartilhar do celular (WhatsApp, e-mail, Drive…)"); sair(); }, false, "Do jeito que estão"],
+    ["Tudo num PDF só", () => { aviso("Abre o compartilhar do celular com 1 PDF"); sair(); }, false, "As páginas em sequência, na ordem da lista"],
+    ["Como fotos (JPG)", () => { aviso("Abre o compartilhar do celular com as fotos"); sair(); }, false, "Uma imagem por página"],
+  ]);
+  if (a === "pc") folha("Levar para o formulário no PC", resumo() + " · vão para “PC do balcão”", [["Mandar agora", () => { aviso("Enviando 1 de " + sel.size + "… (Kuru)"); sair(); }]]);
+  if (a === "juntar") folha("Juntar num documento só?", `As ${window._pags} páginas viram um documento, na ordem da lista. Os originais continuam aqui.`, [
+    ["Juntar", () => { aviso("Criado: “Documento juntado” com " + window._pags + " páginas"); sair(); }],
+    ["Juntar e apagar os originais", () => { aviso("Juntado; originais apagados"); sair(); }, true],
+  ]);
+  if (a === "salvar") folha("Baixar no celular", resumo(), [
+    ["Um PDF para cada documento", () => { aviso("Salvos em Downloads"); sair(); }],
+    ["Tudo num PDF só", () => { aviso("Salvo em Downloads"); sair(); }],
+  ]);
+  if (a === "excluir") folha(`Excluir ${pl(sel.size, "documento", "documentos")}?`, "Somem do celular. Não dá para desfazer.", [[`Excluir ${pl(sel.size, "documento", "documentos")}`, () => { aviso("Excluídos"); sair(); }, true]]);
+};
+desenhar();
+</script>
+</body>
+</html>

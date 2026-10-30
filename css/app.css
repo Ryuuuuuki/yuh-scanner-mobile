@@ -267,6 +267,9 @@ button{cursor:pointer}
 
 /* ===== levar para o formulário no PC (Yuh Extension) ===== */
 .opc{display:flex;align-items:center;gap:12px;border:1px solid var(--linha);background:var(--papel);color:var(--tinta);border-radius:14px;padding:12px;text-align:left;width:100%;margin-bottom:10px}
+/* no escuro o --papel é a cor da FOLHA (clara): o cartão de opção precisa de fundo escuro */
+:root[data-theme="dark"] .opc{background:#2B3542}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .opc{background:#2B3542}}
 .opc .ico{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:var(--caneta-suave);color:var(--caneta);flex:none}
 .opc b{display:block;font-size:15px}
 .opc small{display:block;color:var(--tinta-2);font-size:12px}

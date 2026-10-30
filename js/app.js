@@ -6,7 +6,7 @@ import { montarPdf } from "./pdf.js";
 import { sugestoesDeNome } from "./ocr.js";
 import * as ponte from "./ponte.js";
 
-export const VERSAO = "1.3.1";
+export const VERSAO = "1.3.2";
 const $ = id => document.getElementById(id);
 const celular = $("celular");
 const FILTROS = [["realcado", "Realçado"], ["original", "Original"], ["cinza", "Cinza"], ["pb", "P&B"]];
