@@ -6,7 +6,7 @@ import { montarPdf } from "./pdf.js";
 import { sugestoesDeNome } from "./ocr.js";
 import * as ponte from "./ponte.js";
 
-export const VERSAO = "1.3.2";
+export const VERSAO = "1.4.0";
 const $ = id => document.getElementById(id);
 const celular = $("celular");
 const FILTROS = [["realcado", "Realçado"], ["original", "Original"], ["cinza", "Cinza"], ["pb", "P&B"]];
@@ -466,6 +466,7 @@ function menuDoc(d){
     opcoes: [
       { t: "Renomear", f: () => renomear(d, () => docAtual === d && !$("tDoc").hidden ? desenharDoc(false) : desenharInicio()) },
       { t: "Organizar páginas", f: async () => { if (docAtual !== d || $("tDoc").hidden) await abrirDoc(d, 0); abrirGrade(); } },
+      ...(!$("tInicio").hidden ? [{ t: "Selecionar vários", f: () => entrarSelecao(d) }] : []),
       { t: "Conectar ao PC", f: abrirLeitorQr },
       ...(ponte.pcs().length ? [{ t: "PCs conectados", f: mostrarPcs }] : []),
       { t: "Excluir documento", perigo: true, f: () => folhaBaixo({
@@ -850,17 +851,139 @@ function desenharInicio(){
     const h = document.createElement("h2"); h.textContent = "Documentos"; L.append(h);
     for (const d of docs){
       const b = document.createElement("div"); b.className = "doc"; b.setAttribute("role", "button"); b.tabIndex = 0;
-      b.innerHTML = `<img alt=""><span class="inf"><b></b><small></small></span><button class="mais" aria-label="Opções do documento"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>`;
+      b.innerHTML = `<span class="marca" aria-hidden="true"></span><img alt=""><span class="inf"><b></b><small></small></span><button class="mais" aria-label="Opções do documento"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>`;
       if (d.paginas[0]?.mini) b.querySelector("img").src = d.paginas[0].mini;
       b.querySelector("b").textContent = d.nome;
       b.querySelector("small").textContent = `${plural(d.paginas.length, "página", "páginas")} · ${quando(d.alterado || d.criado)}`;
-      b.onclick = e => { if (!e.target.closest(".mais")) abrirDoc(d, 0); };
-      b.onkeydown = e => { if (e.key === "Enter") abrirDoc(d, 0); };
-      b.querySelector(".mais").onclick = () => menuDoc(d);
+      if (selecao.has(d.id)) b.classList.add("sel");
+      // segurar o dedo = selecionar (como no WhatsApp); com a seleção aberta, tocar marca/desmarca
+      let tSegura = null, segurou = false, x0 = 0, y0 = 0;
+      b.onpointerdown = e => { segurou = false; x0 = e.clientX; y0 = e.clientY; clearTimeout(tSegura);
+        tSegura = setTimeout(() => { segurou = true; if (!selecionando()) entrarSelecao(d); else alternarSel(d); try { navigator.vibrate?.(25); } catch {} }, 450); };
+      b.onpointermove = e => { if (Math.abs(e.clientX - x0) + Math.abs(e.clientY - y0) > 12) clearTimeout(tSegura); };
+      b.onpointerup = b.onpointerleave = b.onpointercancel = () => clearTimeout(tSegura);
+      b.oncontextmenu = e => e.preventDefault();
+      b.onclick = e => {
+        if (segurou){ segurou = false; return; }
+        if (selecionando()) return alternarSel(d);
+        if (!e.target.closest(".mais")) abrirDoc(d, 0);
+      };
+      b.onkeydown = e => { if (e.key === "Enter") selecionando() ? alternarSel(d) : abrirDoc(d, 0); };
+      b.querySelector(".mais").onclick = e => { if (!selecionando()) menuDoc(d); };
       L.append(b);
     }
   }
   const v = document.createElement("div"); v.className = "versao"; v.textContent = `Yuh Scanner Mobile ${VERSAO}`; L.append(v);
+  marcarSelecao();
+}
+
+/* ================= selecionar vários ================= */
+const selecao = new Set();   // ids dos documentos marcados
+const selecionando = () => selecao.size > 0;
+const selecionados = () => docs.filter(d => selecao.has(d.id));
+function entrarSelecao(d){
+  selecao.add(d.id);
+  if (!empilhado){ history.pushState({ yuh: 1 }, ""); empilhado = true; }   // o "voltar" do Android sai da seleção
+  desenharInicio();
+}
+function alternarSel(d){ selecao.has(d.id) ? selecao.delete(d.id) : selecao.add(d.id); desenharInicio(); }
+function sairSelecao(){ if (!selecao.size) return; selecao.clear(); desenharInicio(); }
+function marcarSelecao(){
+  for (const id of [...selecao]) if (!docs.some(d => d.id === id)) selecao.delete(id);
+  const n = selecao.size;
+  $("tInicio").classList.toggle("selecionando", n > 0);
+  $("sConta").textContent = plural(n, "selecionado", "selecionados");
+  $("acoesSel").querySelector('[data-a="juntar"]').disabled = n < 2;
+}
+$("sSair").onclick = () => { sairSelecao(); if (empilhado && $("tInicio").hidden === false){ empilhado = false; history.back(); } };
+$("sTudo").onclick = () => { if (selecao.size === docs.length) selecao.clear(); else docs.forEach(d => selecao.add(d.id)); desenharInicio(); };
+const resumoSel = l => `${plural(l.length, "documento", "documentos")} · ${plural(l.reduce((s, d) => s + d.paginas.length, 0), "página", "páginas")}`;
+// as páginas de vários documentos, uma atrás da outra (na ordem da lista)
+async function paginasDeVarios(l){ const out = []; for (const d of l) out.push(...await paginasProntas(d)); return out; }
+const nomeJunto = l => l.length === 1 ? l[0].nome : `${nomePadrao().replace(/_Documento$/, "")}_${l.length}_documentos`;
+async function arquivosDaSelecao(l, como){
+  if (como === "um") return [await montarPdf(nomeJunto(l), await paginasDeVarios(l))];
+  if (como === "jpg"){ const out = []; for (const d of l) out.push(...await gerarJpgs(d)); return out; }
+  const out = []; for (const d of l) out.push(await gerarPdf(d)); return out;
+}
+function opcoesDeArquivo(F, fechar, l, fazer){
+  const ops = [["varios", "Um PDF para cada documento", "Do jeito que estão"], ["um", "Tudo num PDF só", "As páginas em sequência, na ordem da lista"], ["jpg", "Como fotos (JPG)", "Uma imagem por página"]];
+  for (const [k, t, sub] of l.length === 1 ? ops.filter(o => o[0] !== "varios") : ops){
+    const b = document.createElement("button"); b.className = "opc";
+    b.innerHTML = `<span style="flex:1;min-width:0"><b></b><small></small></span>`;
+    b.querySelector("b").textContent = t; b.querySelector("small").textContent = sub;
+    b.onclick = async () => { const arqs = await comEspera(k === "jpg" ? "Preparando as imagens…" : "Montando o PDF…", () => arquivosDaSelecao(l, k)); if (!arqs) return; fechar(); fazer(arqs); };
+    F.append(b);
+  }
+}
+$("acoesSel").onclick = e => {
+  const a = e.target.closest("[data-a]")?.dataset.a, l = selecionados(); if (!a || !l.length) return;
+  if (a === "compartilhar") folhaBaixo({ titulo: "Compartilhar", texto: resumoSel(l), corpo: (F, fechar) => opcoesDeArquivo(F, fechar, l, async arqs => {
+    if (navigator.canShare?.({ files: arqs })){ if (await compartilhar(arqs)) sairSelecao(); }
+    else { baixar(arqs); avisar("Este navegador não envia arquivos direto: salvei no celular"); sairSelecao(); }
+  }) });
+  if (a === "baixar") folhaBaixo({ titulo: "Baixar no celular", texto: resumoSel(l), corpo: (F, fechar) => opcoesDeArquivo(F, fechar, l, arqs => {
+    baixar(arqs); avisar(arqs.length > 1 ? `${arqs.length} arquivos salvos em Downloads` : `“${arqs[0].name}” salvo em Downloads`); sairSelecao();
+  }) });
+  if (a === "pc"){
+    const lpcs = ponte.pcs(), alvo = lpcs.find(p => p.id === pcEscolhido) || lpcs[0];
+    if (!alvo) return folhaBaixo({ titulo: "Nenhum PC conectado", texto: "Conecte o celular a um PC com a Yuh Extension primeiro.", opcoes: [{ t: "Conectar ao PC", f: abrirLeitorQr }] });
+    folhaBaixo({ titulo: "Levar para o formulário no PC", texto: `${resumoSel(l)} · vão para “${alvo.nome}”`, opcoes: [
+      { t: "Mandar agora", f: () => levarVariosAoPc(alvo, l) },
+      ...(lpcs.length > 1 ? [{ t: "Escolher outro PC", f: () => folhaBaixo({ titulo: "Para qual PC?", opcoes: lpcs.map(p => ({ t: p.nome, f: () => { pcEscolhido = p.id; levarVariosAoPc(p, l); } })) }) }] : []),
+    ] });
+  }
+  if (a === "juntar" && l.length > 1){
+    const n = l.reduce((s, d) => s + d.paginas.length, 0);
+    folhaBaixo({ titulo: "Juntar num documento só?", texto: `As ${n} páginas viram um documento, na ordem da lista. Os originais continuam aqui.`, opcoes: [
+      { t: "Juntar", f: () => juntarDocs(l, false) },
+      { t: "Juntar e apagar os originais", perigo: true, f: () => juntarDocs(l, true) },
+    ] });
+  }
+  if (a === "excluir") folhaBaixo({ titulo: `Excluir ${plural(l.length, "documento", "documentos")}?`, texto: `${resumoSel(l)} somem do celular. Não dá para desfazer.`, opcoes: [
+    { t: `Excluir ${plural(l.length, "documento", "documentos")}`, perigo: true, f: async () => {
+      for (const d of l){ await banco.excluirDoc(d); d.paginas.forEach(p => p.url && URL.revokeObjectURL(p.url)); }
+      docs = docs.filter(d => !l.includes(d)); selecao.clear(); desenharInicio(); avisar(l.length > 1 ? `${l.length} documentos excluídos` : "Documento excluído");
+    } },
+  ] });
+};
+async function juntarDocs(l, apagar){
+  const novo = await comEspera("Juntando…", async () => {
+    const paginas = [];
+    for (const d of l) for (const p of d.paginas){
+      const pid = novoId(), foto = await banco.lerFoto(p.pid);
+      if (!foto) continue;
+      await banco.guardarFoto(pid, foto);
+      const pronta = await banco.lerPronta(p.pid);
+      if (pronta) await banco.guardarPronta(pid, pronta.chave, pronta.blob);
+      paginas.push({ pid, cantos: p.cantos, filtro: p.filtro, rot: p.rot, mini: p.mini });
+    }
+    const doc = { id: novoId(), nome: nomeJunto(l), criado: Date.now(), paginas };
+    await banco.salvarDoc(doc);
+    if (apagar) for (const d of l){ await banco.excluirDoc(d); d.paginas.forEach(p => p.url && URL.revokeObjectURL(p.url)); }
+    return doc;
+  });
+  if (!novo) return;
+  if (apagar) docs = docs.filter(d => !l.includes(d));
+  docs.unshift(novo); selecao.clear(); desenharInicio();
+  avisar(`Juntado: “${novo.nome}” com ${plural(novo.paginas.length, "página", "páginas")}`);
+}
+async function levarVariosAoPc(pc, l){
+  const e = document.createElement("div"); e.className = "enviando";
+  e.innerHTML = `<div><img class="kuru" src="${KURU}" alt=""><b></b><p>Trancado: só o seu PC consegue abrir</p></div>`;
+  celular.append(e);
+  let ok = 0;
+  try {
+    for (const d of l){
+      e.querySelector("b").textContent = `Enviando para ${pc.nome}… ${ok + 1} de ${l.length}`;
+      const pags = await paginasProntas(d);
+      await ponte.enviarAoPc(pc, d.nome, pags.map(p => p.blob));
+      ponte.marcarEnviado(pc, d); ok++;
+    }
+    e.innerHTML = `<div><div class="ok"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg></div><b>${ok === 1 ? "Enviado" : ok + " enviados"}</b><p>Chegam na Yuh Extension em segundos (ficam guardados por 24 h)</p></div>`;
+    sairSelecao();
+    setTimeout(() => e.remove(), 2400);
+  } catch (err) { e.remove(); avisar(`Mandei ${ok} de ${l.length}. ${err.message || "Não consegui enviar o resto."}`); }
 }
 function quando(t){
   const d = new Date(t), hoje = new Date(), ontem = new Date(Date.now() - 864e5);
@@ -901,6 +1024,7 @@ window.addEventListener("popstate", () => {
   empilhado = false;
   const veu = celular.querySelector(".veu");
   if (veu) veu.click();
+  else if (!$("tInicio").hidden && selecionando()) sairSelecao();
   else if (!$("zoom").hidden) $("zoom").hidden = true;
   else if (!$("tSep").hidden) $("sepVoltar").click();
   else if (!$("tCamera").hidden) $("camFechar").click();

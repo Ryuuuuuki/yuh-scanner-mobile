@@ -309,3 +309,24 @@ button{cursor:pointer}
 .enviando b{font-size:17px}
 .enviando p{font-size:13px;opacity:.85;margin:6px 0 0}
 .enviando .ok{width:64px;height:64px;border-radius:50%;background:var(--livre);display:grid;place-items:center;margin:0 auto 14px}
+
+/* ---------- selecionar vários (como no WhatsApp: segurar o dedo) ---------- */
+.doc{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;transition:background .15s,border-color .15s}
+.doc .marca{display:none;width:26px;height:26px;border-radius:50%;border:2px solid var(--tinta-2);flex:none;place-items:center}
+.selecionando .doc .marca{display:grid}
+.selecionando .doc .mais{display:none}
+.doc.sel{background:var(--caneta-suave);border-color:var(--caneta)}
+.doc.sel .marca{background:var(--caneta);border-color:var(--caneta);color:var(--sobre-caneta)}
+.doc.sel .marca::after{content:"";width:6px;height:11px;border:solid currentColor;border-width:0 3px 3px 0;transform:translate(0,-1px) rotate(45deg)}
+.barra-sel{display:none}
+.selecionando .barra-normal{display:none}
+.selecionando .barra-sel{display:flex}
+.barra-sel b{flex:1;font-size:18px;margin-left:4px}
+.acoes-sel{position:absolute;left:12px;right:12px;bottom:calc(16px + var(--fundo));display:none;justify-content:space-around;background:var(--painel);border:1px solid var(--linha);border-radius:20px;padding:8px 4px;box-shadow:var(--sombra)}
+.selecionando .acoes-sel{display:flex}
+.selecionando .fab{display:none}
+.acoes-sel button{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;border:0;background:none;color:var(--tinta);font-size:12px;padding:6px 2px;border-radius:12px;min-width:0}
+.acoes-sel button:active{background:var(--caneta-suave)}
+.acoes-sel button:disabled{opacity:.35}
+.acoes-sel svg{color:var(--caneta)}
+.acoes-sel .perigo svg{color:var(--carimbo)}
